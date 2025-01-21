@@ -1,0 +1,952 @@
+<html><head><base href="https://websim.io/game/3d-fps-joystick-walls-portal-gun-improved-v10/" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Enhanced First-Person 3D Portal Gun Game with Improved Portals</title>
+<style>
+body { margin: 0; overflow: hidden; }
+#gameCanvas { width: 100%; height: 100%; }
+#cameraToggleButton {
+  top: 20px;
+  right: 220px;
+  background: linear-gradient(135deg, #9932CC, #4B0082);
+}
+#cameraJoystick {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  width: 120px;
+  height: 120px;
+  background-color: rgba(255, 0, 0, 0.2);
+  border: 2px solid rgba(255, 0, 0, 0.5);
+  border-radius: 50%;
+  touch-action: none;
+  z-index: 1;
+}
+#cameraStick {
+  position: absolute;
+  top: 30px;
+  left: 30px;
+  width: 60px;
+  height: 60px;
+  background-color: rgba(255, 0, 0, 0.6);
+  border: 2px solid rgba(255, 0, 0, 0.8);
+  border-radius: 50%;
+  transition: transform 0.1s ease-out;
+}
+#joystick {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  width: 120px;
+  height: 120px;
+  background-color: rgba(0, 162, 232, 0.2);
+  border: 2px solid rgba(0, 162, 232, 0.5);
+  border-radius: 50%;
+  touch-action: none;
+  z-index: 1;
+}
+#stick {
+  position: absolute;
+  top: 30px;
+  left: 30px;
+  width: 60px;
+  height: 60px;
+  background-color: rgba(0, 162, 232, 0.6);
+  border: 2px solid rgba(0, 162, 232, 0.8);
+  border-radius: 50%;
+  transition: transform 0.1s ease-out;
+}
+#rotateArea {
+  position: absolute;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  z-index: 0;
+}
+#crosshair {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 24px;
+  height: 24px;
+  transform: translate(-50%, -50%);
+}
+.button {
+  position: absolute;
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 18px;
+  font-weight: bold;
+  color: white;
+  user-select: none;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: transform 0.1s ease-out, box-shadow 0.1s ease-out;
+  z-index: 1;
+}
+.button:active {
+  transform: scale(0.95);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+#shootButton {
+  top: 20px;
+  right: 20px;
+  background: linear-gradient(135deg, #00a2e8, #0077be);
+}
+#switchPortalButton {
+  top: 20px;
+  right: 120px;
+  background: linear-gradient(135deg, #ff7f27, #ff4500);
+}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+<div id="joystick">
+  <div id="stick"></div>
+</div>
+<div id="cameraJoystick">
+  <div id="cameraStick"></div>
+</div>
+<div id="rotateArea"></div>
+<svg id="crosshair" viewBox="0 0 100 100">
+  <circle cx="50" cy="50" r="48" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="2"/>
+  <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1"/>
+  <line x1="50" y1="20" x2="50" y2="80" stroke="rgba(255,255,255,0.8)" stroke-width="2"/>
+  <line x1="20" y1="50" x2="80" y2="50" stroke="rgba(255,255,255,0.8)" stroke-width="2"/>
+</svg>
+<div id="shootButton" class="button">SHOOT</div>
+<div id="switchPortalButton" class="button">AUTO</div>
+<div id="cameraToggleButton" class="button">FPS</div>
+
+<script>
+const MAX_SOUNDS = 5;
+const soundPool = [];
+let currentSoundIndex = 0;
+let scene, camera, renderer, player;
+let joystick, stick, joystickPressed = false;
+let joystickVector = new THREE.Vector2();
+let cameraMode = 'fps';
+let bots = [];
+const BOT_COUNT = 5;
+const BOT_SHOOT_RANGE = 15;
+const BOT_MOVE_SPEED = 3;
+const BOT_ROTATION_SPEED = 2;
+let thirdPersonDistance = 5;
+let targetCameraPosition = new THREE.Vector3();
+let currentCameraPosition = new THREE.Vector3();
+let cameraJoystick, cameraStick, cameraJoystickPressed = false;
+let cameraJoystickVector = new THREE.Vector2();
+let rotateArea, isRotating = false;
+let previousTouch = { x: 0, y: 0 };
+let walls = [];
+let bullets = [];
+const BULLET_SPEED = 15;
+const BULLET_LIFETIME = 15000; // 15 seconds
+let currentFireRate = 1; // 0 for single shot, 1 for rapid fire
+let lastShotTime = 0;
+let autoFireInterval = null;
+let clock, deltaTime;
+let gravity = -9.8;
+let velocity = new THREE.Vector3();
+
+function init() {
+  // Initialize sound pool
+  for (let i = 0; i < MAX_SOUNDS; i++) {
+    const audio = new Audio('https://cdn.freesound.org/previews/35/35677_35187-lq.mp3');
+    audio.volume = 0.9;
+    soundPool.push(audio);
+  }
+
+  clock = new THREE.Clock();
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x90EE90);
+  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+  renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('gameCanvas'), antialias: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+  const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+  scene.add(ambientLight);
+
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
+  directionalLight.position.set(10, 15, 10);
+  directionalLight.castShadow = true;
+  scene.add(directionalLight);
+
+  player = new THREE.Group();
+  scene.add(player);
+  player.add(camera);
+  player.position.set(0, 1, 0);
+
+  // Add player cube
+  const playerGeometry = new THREE.BoxGeometry(1, 2, 1);
+  const playerMaterial = new THREE.MeshPhongMaterial({ 
+    color: 0x2194ce,
+    transparent: true,
+    opacity: 0.8
+  });
+  const playerCube = new THREE.Mesh(playerGeometry, playerMaterial);
+  playerCube.castShadow = true;
+  playerCube.position.y = 0; // Center vertically on player position
+  player.add(playerCube);
+  playerCube.visible = false;
+  scene.userData.playerCube = playerCube; // Store reference
+
+  // Add gun model
+  const gunGeometry = new THREE.BoxGeometry(0.1, 0.1, 0.3);
+  const gunMaterial = new THREE.MeshPhongMaterial({ color: 0x333333 });
+  const gun = new THREE.Mesh(gunGeometry, gunMaterial);
+  gun.position.set(0.2, -0.1, -0.3);
+  camera.add(gun);
+  // Store gun reference
+  scene.userData.gun = gun;
+
+  // Add barrel
+  const barrelGeometry = new THREE.CylinderGeometry(0.02, 0.02, 0.4, 8);
+  const barrelMaterial = new THREE.MeshPhongMaterial({ color: 0x333333 });
+  const barrel = new THREE.Mesh(barrelGeometry, barrelMaterial);
+  barrel.rotation.x = Math.PI / 2;
+  barrel.position.set(0, 0, -0.2);
+  gun.add(barrel);
+  // Store barrel reference
+  scene.userData.barrel = barrel;
+
+  const textureLoader = new THREE.TextureLoader();
+  const grassTexture = textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/terrain/grasslight-big.jpg');
+  grassTexture.wrapS = THREE.RepeatWrapping;
+  grassTexture.wrapT = THREE.RepeatWrapping;
+  grassTexture.repeat.set(20, 20);
+
+  const planeGeometry = new THREE.PlaneGeometry(40, 40);
+  const planeMaterial = new THREE.MeshStandardMaterial({ 
+    map: grassTexture,
+    side: THREE.DoubleSide,
+    roughness: 1.0,
+    metalness: 0.0
+  });
+  const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+  plane.rotation.x = Math.PI / 2;
+  plane.position.y = 0;
+  plane.receiveShadow = true;
+  scene.add(plane);
+
+  addTrees();
+  addBushes();
+
+  // Initialize bots
+  for(let i = 0; i < BOT_COUNT; i++) {
+    bots.push(createBot());
+  }
+
+  joystick = document.getElementById('joystick');
+  stick = document.getElementById('stick');
+  rotateArea = document.getElementById('rotateArea');
+  const shootButton = document.getElementById('shootButton');
+  const switchPortalButton = document.getElementById('switchPortalButton');
+
+  shootButton.addEventListener('pointerdown', () => {
+    if (currentFireRate === 0) {
+      shoot();
+    } else {
+      shoot();
+      if (!autoFireInterval) {
+        autoFireInterval = setInterval(shoot, 100);
+      }
+    }
+  });
+
+  shootButton.addEventListener('pointerup', () => {
+    if (autoFireInterval) {
+      clearInterval(autoFireInterval);
+      autoFireInterval = null;
+    }
+  });
+
+  shootButton.addEventListener('pointerleave', () => {
+    if (autoFireInterval) {
+      clearInterval(autoFireInterval);
+      autoFireInterval = null;
+    }
+  });
+
+  cameraJoystick = document.getElementById('cameraJoystick');
+  cameraStick = document.getElementById('cameraStick');
+
+  joystick.addEventListener('pointerdown', onJoystickPointerDown, { passive: false });
+  joystick.addEventListener('pointermove', onJoystickPointerMove, { passive: false });
+  joystick.addEventListener('pointerup', onJoystickPointerUp);
+  joystick.addEventListener('pointercancel', onJoystickPointerUp);
+
+  cameraJoystick.addEventListener('pointerdown', onCameraJoystickPointerDown, { passive: false });
+  cameraJoystick.addEventListener('pointermove', onCameraJoystickPointerMove, { passive: false });
+  cameraJoystick.addEventListener('pointerup', onCameraJoystickPointerUp);
+  cameraJoystick.addEventListener('pointercancel', onCameraJoystickPointerUp);
+
+  rotateArea.addEventListener('pointerdown', onRotateStart);
+  rotateArea.addEventListener('pointermove', onRotateMove);
+  rotateArea.addEventListener('pointerup', onRotateEnd);
+  rotateArea.addEventListener('pointercancel', onRotateEnd);
+
+  shootButton.addEventListener('pointerdown', () => {
+    shoot();
+    if (currentFireRate === 1 && !autoFireInterval) {
+      autoFireInterval = setInterval(shoot, 100);
+    }
+  });
+
+  shootButton.addEventListener('pointerup', () => {
+    if (autoFireInterval) {
+      clearInterval(autoFireInterval);
+      autoFireInterval = null;
+    }
+  });
+
+  shootButton.addEventListener('pointerleave', () => {
+    if (autoFireInterval) {
+      clearInterval(autoFireInterval);
+      autoFireInterval = null;
+    }
+  });
+  
+  switchPortalButton.addEventListener('pointerdown', switchFireRate);
+  
+  const cameraToggleButton = document.getElementById('cameraToggleButton');
+  cameraToggleButton.addEventListener('pointerdown', toggleCameraMode);
+
+  animate();
+}
+
+async function onJoystickPointerDown(event) {
+  event.stopPropagation();
+  joystickPressed = true;
+  await onJoystickPointerMove(event);
+}
+
+async function onJoystickPointerMove(event) {
+  if (!joystickPressed) return;
+  event.stopPropagation();
+  const joystickRect = joystick.getBoundingClientRect();
+  const centerX = joystickRect.left + joystickRect.width / 2;
+  const centerY = joystickRect.top + joystickRect.height / 2;
+  const touchX = event.clientX;
+  const touchY = event.clientY;
+
+  const deltaX = touchX - centerX;
+  const deltaY = touchY - centerY;
+  const distance = Math.min(joystickRect.width / 2, Math.sqrt(deltaX * deltaX + deltaY * deltaY));
+  const angle = Math.atan2(deltaY, deltaX);
+
+  const stickX = Math.cos(angle) * distance;
+  const stickY = Math.sin(angle) * distance;
+
+  stick.style.transform = `translate(${stickX}px, ${stickY}px)`;
+  joystickVector.set(stickX / (joystickRect.width / 2), -stickY / (joystickRect.height / 2));
+}
+
+async function onCameraJoystickPointerDown(event) {
+  event.stopPropagation();
+  cameraJoystickPressed = true;
+  await onCameraJoystickPointerMove(event);
+}
+
+async function onCameraJoystickPointerMove(event) {
+  if (!cameraJoystickPressed) return;
+  event.stopPropagation();
+  event.preventDefault();
+  const joystickRect = cameraJoystick.getBoundingClientRect();
+  const centerX = joystickRect.left + joystickRect.width / 2;
+  const centerY = joystickRect.top + joystickRect.height / 2;
+  const touchX = event.clientX;
+  const touchY = event.clientY;
+
+  const deltaX = touchX - centerX;
+  const deltaY = touchY - centerY;
+  const distance = Math.min(joystickRect.width / 2, Math.sqrt(deltaX * deltaX + deltaY * deltaY));
+  const angle = Math.atan2(deltaY, deltaX);
+
+  const stickX = Math.cos(angle) * distance;
+  const stickY = Math.sin(angle) * distance;
+
+  cameraStick.style.transform = `translate(${stickX}px, ${stickY}px)`;
+  cameraJoystickVector.set(stickX / (joystickRect.width / 2), -stickY / (joystickRect.height / 2));
+}
+
+function addWalls() {
+  const wallGeometry = new THREE.BoxGeometry(40, 8, 1);
+  const wallMaterial = new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.2, roughness: 0.8 });
+
+  const wallsData = [
+    { position: [0, 4, -20], rotation: [0, 0, 0] },
+    { position: [0, 4, 20], rotation: [0, 0, 0] },
+    { position: [20, 4, 0], rotation: [0, Math.PI / 2, 0] },
+    { position: [-20, 4, 0], rotation: [0, Math.PI / 2, 0] }
+  ];
+
+  wallsData.forEach(wallData => {
+    const wall = new THREE.Mesh(wallGeometry, wallMaterial);
+    wall.position.set(...wallData.position);
+    wall.rotation.set(...wallData.rotation);
+    wall.castShadow = true;
+    wall.receiveShadow = true;
+    scene.add(wall);
+    walls.push(wall);
+  });
+}
+
+function addTrees() {
+  const trunkGeometry = new THREE.CylinderGeometry(0.2, 0.4, 4, 8);
+  const trunkMaterial = new THREE.MeshStandardMaterial({ color: 0x4A2B0F });
+  
+  const leavesGeometry = new THREE.ConeGeometry(2, 4, 8);
+  const leavesMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22 });
+  
+  for (let i = 0; i < 30; i++) {
+    const tree = new THREE.Group();
+    
+    const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+    trunk.position.y = 2;
+    trunk.castShadow = true;
+    tree.add(trunk);
+    
+    const leaves = new THREE.Mesh(leavesGeometry, leavesMaterial);
+    leaves.position.y = 5;
+    leaves.castShadow = true;
+    tree.add(leaves);
+    
+    tree.position.set(
+      Math.random() * 36 - 18,
+      0,
+      Math.random() * 36 - 18
+    );
+    
+    tree.rotation.y = Math.random() * Math.PI * 2;
+    
+    scene.add(tree);
+    walls.push(trunk);
+  }
+}
+
+function addBushes() {
+  const bushGeometry = new THREE.SphereGeometry(0.5, 8, 8);
+  const bushMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22 });
+  
+  for (let i = 0; i < 40; i++) {
+    const bush = new THREE.Mesh(bushGeometry, bushMaterial);
+    bush.position.set(
+      Math.random() * 38 - 19,
+      0.5,
+      Math.random() * 38 - 19
+    );
+    bush.scale.y = 0.7;
+    bush.castShadow = true;
+    scene.add(bush);
+  }
+}
+
+function onJoystickPointerUp() {
+  joystickPressed = false;
+  stick.style.transform = 'translate(0px, 0px)';
+  joystickVector.set(0, 0);
+}
+
+function onCameraJoystickPointerUp() {
+  if (cameraJoystickPressed) {
+    cameraJoystickPressed = false;
+    cameraStick.style.transform = 'translate(0px, 0px)';
+    cameraJoystickVector.set(0, 0);
+  }
+}
+
+function onRotateStart(event) {
+  if (event.clientY < window.innerHeight * 0.6) {
+    isRotating = true;
+    previousTouch.x = event.clientX;
+    previousTouch.y = event.clientY;
+  }
+}
+
+function onRotateMove(event) {
+  if (isRotating) {
+    const deltaX = event.clientX - previousTouch.x;
+    const deltaY = event.clientY - previousTouch.y;
+
+    const rotationSpeed = 0.003;
+    player.rotation.y -= deltaX * rotationSpeed;
+    camera.rotation.x -= deltaY * rotationSpeed;
+
+    camera.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, camera.rotation.x));
+
+    previousTouch.x = event.clientX;
+    previousTouch.y = event.clientY;
+  }
+}
+
+function onRotateEnd() {
+  isRotating = false;
+}
+
+function createShootEffect(color) {
+  const geometry = new THREE.PlaneGeometry(0.1, 0.1);
+  const material = new THREE.MeshBasicMaterial({
+    color: color,
+    transparent: true,
+    opacity: 0.8,
+    side: THREE.DoubleSide,
+    blending: THREE.AdditiveBlending
+  });
+  
+  const effect = new THREE.Mesh(geometry, material);
+  effect.position.set(
+    player.position.x + Math.sin(player.rotation.y),
+    player.position.y,
+    player.position.z + Math.cos(player.rotation.y)
+  );
+  effect.lookAt(camera.position);
+  
+  return effect;
+}
+
+function shoot() {
+  const now = Date.now();
+  const fireRateDelay = currentFireRate === 0 ? 500 : 50;
+
+  if (now - lastShotTime < fireRateDelay) return;
+  lastShotTime = now;
+
+  // Play shooting sound
+  const sound = soundPool[currentSoundIndex];
+  sound.currentTime = 0;
+  sound.play().catch(e => console.log("Audio play failed:", e));
+  currentSoundIndex = (currentSoundIndex + 1) % MAX_SOUNDS;
+
+  const bulletGeometry = new THREE.SphereGeometry(0.1, 16, 16);
+  const bulletMaterial = new THREE.MeshPhongMaterial({ 
+    color: 0xffff00,
+    emissive: 0xffff00,
+    emissiveIntensity: 0.5,
+    shininess: 100
+  });
+  const bullet = new THREE.Mesh(bulletGeometry, bulletMaterial);
+  
+  // Get spawn position based on camera mode
+  const spawnPos = new THREE.Vector3();
+  if (cameraMode === 'fps') {
+    scene.userData.barrel.getWorldPosition(spawnPos);
+  } else {
+    spawnPos.copy(player.position);
+    spawnPos.y += 1;
+    const forward = new THREE.Vector3(0, 0, -1);
+    forward.applyQuaternion(player.quaternion);
+    spawnPos.add(forward);
+  }
+  bullet.position.copy(spawnPos);
+  
+  // Get camera's forward direction
+  const direction = new THREE.Vector3(0, 0, -1);
+  direction.applyQuaternion(camera.getWorldQuaternion(new THREE.Quaternion()));
+  
+  bullets.push({
+    mesh: bullet,
+    velocity: direction.multiplyScalar(BULLET_SPEED),
+    created: now
+  });
+  
+  scene.add(bullet);
+
+  // Get gun's world position for muzzle flash
+  const gunWorldPosition = new THREE.Vector3();
+  scene.userData.gun.getWorldPosition(gunWorldPosition);
+
+  // Add muzzle flash with correct position
+  const shootEffect = createShootEffect(0xffff00);
+  shootEffect.position.copy(gunWorldPosition);
+  scene.add(shootEffect);
+
+  new TWEEN.Tween(shootEffect.scale)
+    .to({ x: 2, y: 2, z: 2 }, 200)
+    .easing(TWEEN.Easing.Quadratic.Out)
+    .start();
+
+  new TWEEN.Tween(shootEffect.material)
+    .to({ opacity: 0 }, 200)
+    .easing(TWEEN.Easing.Quadratic.Out)
+    .onComplete(() => {
+      scene.remove(shootEffect);
+    })
+    .start();
+
+  // Add recoil animation
+  new TWEEN.Tween(scene.userData.gun.position)
+    .to({ z: -0.2 }, 50)
+    .easing(TWEEN.Easing.Quadratic.Out)
+    .yoyo(true)
+    .repeat(1)
+    .start();
+}
+
+function updateBullets(deltaTime) {
+  const now = Date.now();
+  
+  for (let i = bullets.length - 1; i >= 0; i--) {
+    const bullet = bullets[i];
+
+    // Check bot collisions
+    if(!bullet.fromBot) { // Only player bullets can hit bots
+      for(let bot of bots) {
+        const botBox = new THREE.Box3().setFromObject(bot.mesh);
+        if(botBox.containsPoint(bullet.mesh.position)) {
+          bot.health -= 25; // 4 hits to kill
+          scene.remove(bullet.mesh);
+          bullets.splice(i, 1);
+          
+          const impact = createImpactEffect();
+          impact.position.copy(bullet.mesh.position);
+          scene.add(impact);
+          break;
+        }
+      }
+    }
+    
+    // Scale velocity by deltaTime for smoother motion
+    const movement = bullet.velocity.clone().multiplyScalar(deltaTime);
+    bullet.mesh.position.add(movement);
+    
+    // Add a small glow effect each frame
+    bullet.mesh.material.emissiveIntensity = 0.5 + Math.sin(now * 0.01) * 0.2;
+    
+    // Check ground collision
+    if (bullet.mesh.position.y <= 0) {
+      const impactPosition = bullet.mesh.position.clone();
+      impactPosition.y = 0; // Set impact at ground level
+      
+      const impact = createImpactEffect();
+      impact.position.copy(impactPosition);
+      scene.add(impact);
+      
+      scene.remove(bullet.mesh);
+      bullets.splice(i, 1);
+      continue;
+    }
+    
+    if (now - bullet.created > BULLET_LIFETIME) {
+      scene.remove(bullet.mesh);
+      bullets.splice(i, 1);
+      continue;
+    }
+    
+    const bulletPosition = bullet.mesh.position.clone();
+    for (let wall of walls) {
+      const wallBox = new THREE.Box3().setFromObject(wall);
+      if (wallBox.containsPoint(bulletPosition)) {
+        scene.remove(bullet.mesh);
+        bullets.splice(i, 1);
+        
+        const impact = createImpactEffect();
+        impact.position.copy(bulletPosition);
+        scene.add(impact);
+        break;
+      }
+    }
+  }
+}
+
+function createImpactEffect() {
+  const geometry = new THREE.SphereGeometry(0.1, 32, 32);
+  const material = new THREE.MeshBasicMaterial({
+    color: 0xff0000,
+    transparent: true,
+    opacity: 0.8
+  });
+  const impact = new THREE.Mesh(geometry, material);
+
+  new TWEEN.Tween(impact.scale)
+    .to({ x: 2, y: 2, z: 2 }, 300)
+    .easing(TWEEN.Easing.Quadratic.Out)
+    .start();
+
+  new TWEEN.Tween(impact.material)
+    .to({ opacity: 0 }, 300)
+    .easing(TWEEN.Easing.Quadratic.Out)
+    .onComplete(() => {
+      scene.remove(impact);
+    })
+    .start();
+
+  return impact;
+}
+
+function switchFireRate() {
+  currentFireRate = 1 - currentFireRate;
+  const button = document.getElementById('switchPortalButton');
+  button.textContent = currentFireRate === 0 ? 'SINGLE' : 'AUTO';
+  button.style.background = currentFireRate === 0 ? 
+    'linear-gradient(135deg, #ff7f27, #ff4500)' : 
+    'linear-gradient(135deg, #ff0000, #cc0000)';
+
+  // Clear any existing autofire interval
+  if (autoFireInterval) {
+    clearInterval(autoFireInterval);
+    autoFireInterval = null;
+  }
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  deltaTime = clock.getDelta();
+
+  updatePlayerPosition(deltaTime);
+  updateBullets(deltaTime);
+  updateCamera(deltaTime);
+  updateBots(deltaTime);
+
+  if (cameraJoystickPressed) {
+    const rotationSpeed = 2;
+    player.rotation.y -= cameraJoystickVector.x * rotationSpeed * deltaTime;
+    camera.rotation.x = Math.max(
+      -Math.PI / 2,
+      Math.min(Math.PI / 2, camera.rotation.x + cameraJoystickVector.y * rotationSpeed * deltaTime)
+    );
+  }
+
+  TWEEN.update();
+  renderer.render(scene, camera);
+}
+
+function updatePlayerPosition(deltaTime) {
+  velocity.y += gravity * deltaTime;
+  const deltaPosition = velocity.clone().multiplyScalar(deltaTime);
+
+  if (joystickPressed) {
+    const moveSpeed = 5;
+    const direction = new THREE.Vector3(joystickVector.x, 0, -joystickVector.y);
+    direction.applyQuaternion(player.quaternion);
+    deltaPosition.add(direction.multiplyScalar(moveSpeed * deltaTime));
+  }
+
+  const newPosition = player.position.clone().add(deltaPosition);
+
+  if (!checkCollision(newPosition)) {
+    player.position.copy(newPosition);
+  } else {
+    if (velocity.y < 0) {
+      velocity.y = 0;
+    }
+    velocity.x = 0;
+    velocity.z = 0;
+  }
+
+  if (player.position.y < 1) {
+    player.position.y = 1;
+    velocity.y = 0;
+  }
+}
+
+function toggleCameraMode() {
+  const button = document.getElementById('cameraToggleButton');
+  if (cameraMode === 'fps') {
+    cameraMode = 'third';
+    button.textContent = '3RD';
+    camera.position.set(0, 2, thirdPersonDistance);
+    camera.rotation.set(0, Math.PI, 0);
+    scene.userData.playerCube.visible = true; // Show cube in third person
+  } else {
+    cameraMode = 'fps';
+    button.textContent = 'FPS';
+    camera.position.set(0, 0, 0);
+    camera.rotation.set(0, 0, 0);
+    scene.userData.playerCube.visible = false; // Hide cube in FPS
+  }
+}
+
+function updateCamera(deltaTime) {
+  if (cameraMode === 'third') {
+    // Calculate ideal camera position
+    const idealOffset = new THREE.Vector3(0, 2, thirdPersonDistance);
+    idealOffset.applyQuaternion(player.quaternion);
+    idealOffset.add(player.position);
+
+    // Smoothly interpolate camera position
+    //camera.position.lerp(idealOffset, 5 * deltaTime);
+    
+    // Make camera look at player
+    const lookAtPos = player.position.clone();
+    lookAtPos.y += 1;
+    camera.lookAt(lookAtPos);
+  }
+}
+
+function checkCollision(newPosition) {
+  const playerRadius = 0.5;
+
+  for (let wall of walls) {
+    const wallBox = new THREE.Box3().setFromObject(wall);
+    const playerBox = new THREE.Box3().setFromCenterAndSize(
+      newPosition,
+      new THREE.Vector3(playerRadius * 2, 2, playerRadius * 2)
+    );
+
+    if (wallBox.intersectsBox(playerBox)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function createBot() {
+  const bot = new THREE.Group();
+  
+  // Bot body
+  const botGeometry = new THREE.BoxGeometry(1, 2, 1);
+  const botMaterial = new THREE.MeshPhongMaterial({ 
+    color: 0xff0000,
+    transparent: true, 
+    opacity: 0.8 
+  });
+  const botMesh = new THREE.Mesh(botGeometry, botMaterial);
+  botMesh.castShadow = true;
+  bot.add(botMesh);
+
+  // Random position away from player
+  let position = new THREE.Vector3(
+    Math.random() * 36 - 18,
+    1,
+    Math.random() * 36 - 18
+  );
+  
+  // Ensure minimum distance from player
+  while(position.distanceTo(player.position) < 10) {
+    position = new THREE.Vector3(
+      Math.random() * 36 - 18,
+      1,
+      Math.random() * 36 - 18  
+    );
+  }
+  
+  bot.position.copy(position);
+  scene.add(bot);
+
+  return {
+    mesh: bot,
+    health: 100,
+    lastShot: 0,
+    state: 'patrol', // patrol, chase, attack
+    patrolPoint: new THREE.Vector3()
+  };
+}
+
+function updateBots(deltaTime) {
+  bots.forEach((bot, index) => {
+    if(bot.health <= 0) {
+      scene.remove(bot.mesh);
+      bots.splice(index, 1);
+      return;
+    }
+
+    const distanceToPlayer = bot.mesh.position.distanceTo(player.position);
+    
+    // Update bot state
+    if(distanceToPlayer < BOT_SHOOT_RANGE) {
+      bot.state = 'attack';
+    } else if(distanceToPlayer < BOT_SHOOT_RANGE * 1.5) {
+      bot.state = 'chase';
+    } else {
+      bot.state = 'patrol';
+    }
+
+    // Bot behavior based on state
+    switch(bot.state) {
+      case 'attack':
+        // Face player
+        bot.mesh.lookAt(player.position);
+        
+        // Shoot at player
+        const now = Date.now();
+        if(now - bot.lastShot > 1000) { // 1 second between shots
+          botShoot(bot);
+          bot.lastShot = now;
+        }
+        break;
+        
+      case 'chase':
+        // Move toward player
+        const directionToPlayer = new THREE.Vector3()
+          .subVectors(player.position, bot.mesh.position)
+          .normalize();
+        bot.mesh.position.add(
+          directionToPlayer.multiplyScalar(BOT_MOVE_SPEED * deltaTime)
+        );
+        bot.mesh.lookAt(player.position);
+        break;
+        
+      case 'patrol':
+        // Simple patrol behavior
+        if(bot.mesh.position.distanceTo(bot.patrolPoint) < 1) {
+          bot.patrolPoint.set(
+            Math.random() * 36 - 18,
+            1,
+            Math.random() * 36 - 18
+          );
+        }
+        const directionToPatrol = new THREE.Vector3()
+          .subVectors(bot.patrolPoint, bot.mesh.position)
+          .normalize();
+        bot.mesh.position.add(
+          directionToPatrol.multiplyScalar(BOT_MOVE_SPEED * 0.5 * deltaTime)
+        );
+        bot.mesh.lookAt(bot.patrolPoint);
+        break;
+    }
+  });
+
+  // Spawn new bots if needed
+  while(bots.length < BOT_COUNT) {
+    bots.push(createBot());
+  }
+}
+
+function botShoot(bot) {
+  const bulletGeometry = new THREE.SphereGeometry(0.1, 8, 8);
+  const bulletMaterial = new THREE.MeshPhongMaterial({
+    color: 0xff0000,
+    emissive: 0xff0000,
+    emissiveIntensity: 0.5
+  });
+  const bullet = new THREE.Mesh(bulletGeometry, bulletMaterial);
+  
+  bullet.position.copy(bot.mesh.position);
+  bullet.position.y += 1;
+
+  const direction = new THREE.Vector3()
+    .subVectors(player.position, bullet.position)
+    .normalize();
+
+  bullets.push({
+    mesh: bullet,
+    velocity: direction.multiplyScalar(BULLET_SPEED * 0.7), // Slightly slower than player bullets
+    created: Date.now(),
+    fromBot: true
+  });
+
+  scene.add(bullet);
+}
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+init();
+</script>
+</body>
+</html>

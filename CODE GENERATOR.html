@@ -1,0 +1,262 @@
+<html><head><base href="https://ai-code-gen.com/"/>
+<meta charset="UTF-8">
+<title>HTML Code Generator</title>
+<style>
+:root {
+  --primary: #2563eb;
+  --primary-dark: #1d4ed8;
+  --secondary: #475569;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: #f8fafc;
+  padding: 2rem;
+  line-height: 1.5;
+}
+
+.container {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.header h1 {
+  color: var(--primary);
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.header p {
+  color: var(--secondary);
+  font-size: 1.1rem;
+}
+
+.generator {
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+.input-group {
+  margin-bottom: 1.5rem;
+}
+
+.input-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--secondary);
+  font-weight: 500;
+}
+
+textarea {
+  width: 100%;
+  min-height: 200px;
+  padding: 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 0.9rem;
+  resize: vertical;
+}
+
+textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.btn {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn:hover {
+  background: var(--primary-dark);
+}
+
+#output {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: #f1f5f9;
+  border-radius: 6px;
+  font-family: monospace;
+  white-space: pre-wrap;
+}
+
+.download-btn {
+  display: none;
+  margin-top: 1rem;
+}
+
+.loading {
+  display: none;
+  margin: 1rem 0;
+  color: var(--secondary);
+}
+
+.spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid var(--primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-right: 0.5rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <header class="header">
+    <h1>HTML Code Generator</h1>
+    <p>Generate HTML code from your text prompts using AI</p>
+  </header>
+
+  <main class="generator">
+    <div class="input-group">
+      <label for="model">Select AI Model:</label>
+      <select id="model" class="btn">
+        <option value="gpt-4">GPT-4</option>
+        <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+      </select>
+    </div>
+
+    <div class="input-group">
+      <label for="prompt">Enter your prompt:</label>
+      <textarea id="prompt" placeholder="Describe the HTML code you want to generate..."></textarea>
+    </div>
+
+    <button class="btn" onclick="generateCode()">Generate Code</button>
+    <button class="btn download-btn" onclick="downloadCode()" id="downloadBtn">Download</button>
+
+    <div class="loading" id="loading">
+      <div class="spinner"></div>
+      Generating code...
+    </div>
+
+    <div id="output"></div>
+  </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+let generatedCode = '';
+let isMultiFile = false;
+
+async function generateCode() {
+  const prompt = document.getElementById('prompt').value;
+  const model = document.getElementById('model').value;
+  const output = document.getElementById('output');
+  const downloadBtn = document.getElementById('downloadBtn');
+  const loading = document.getElementById('loading');
+
+  if (!prompt) return;
+
+  loading.style.display = 'block';
+  output.textContent = '';
+  downloadBtn.style.display = 'none';
+
+  try {
+    const response = await fetch('/api/ai_completion', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({
+        prompt: `Generate HTML, CSS, and JavaScript code based on this prompt: "${prompt}".
+        If the prompt mentions multiple files, generate separate files.
+        
+        <typescript-interface>
+        interface Response {
+          isMultiFile: boolean;
+          files: {
+            [filename: string]: string;
+          };
+        }
+        </typescript-interface>
+        
+        <example>
+        {
+          "isMultiFile": true,
+          "files": {
+            "index.html": "<!DOCTYPE html>...",
+            "styles.css": "body { ... }",
+            "script.js": "console.log('Hello');"
+          }
+        }
+        </example>`,
+        model: model,
+        data: prompt
+      }),
+    });
+
+    const data = await response.json();
+    isMultiFile = data.isMultiFile;
+
+    if (isMultiFile) {
+      generatedCode = data.files;
+      output.textContent = 'Generated files:\n\n' + 
+        Object.entries(data.files).map(([filename, content]) => 
+          `// ${filename}\n${content}\n`
+        ).join('\n');
+    } else {
+      generatedCode = data.files['index.html'];
+      output.textContent = generatedCode;
+    }
+
+    downloadBtn.style.display = 'inline-block';
+  } catch (error) {
+    output.textContent = 'Error generating code. Please try again.';
+    console.error('Error:', error);
+  } finally {
+    loading.style.display = 'none';
+  }
+}
+
+async function downloadCode() {
+  if (isMultiFile) {
+    const zip = new JSZip();
+    
+    Object.entries(generatedCode).forEach(([filename, content]) => {
+      zip.file(filename, content);
+    });
+    
+    const blob = await zip.generateAsync({type: 'blob'});
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+    URL.revokeObjectURL(url);
+  } else {
+    const blob = new Blob([generatedCode], {type: 'text/html'});
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+    URL.revokeObjectURL(url);
+  }
+}
+</script>
+</body>
+</html>

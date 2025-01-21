@@ -1,0 +1,572 @@
+<html><head><base href="ios.emulator.com">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>iOS/Android Emulator Hub</title>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: linear-gradient(135deg, #000000, #1a1a1a);
+    color: #fff;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  h1 {
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+    color: #007AFF;
+    text-shadow: 0 0 10px rgba(0, 122, 255, 0.3);
+    position: absolute;
+    top: 20px;
+  }
+
+  .emulator-wrapper {
+    position: fixed;
+    top: 0;
+    left: 10px;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1;
+  }
+
+  iframe {
+    display: block;
+    border-radius: 38px;
+    box-shadow: 0 0 30px rgba(0, 122, 255, 0.2);
+    transition: all 0.3s ease;
+    margin-left: 10px;
+    background: #000;
+  }
+
+  .loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 1.2rem;
+    color: #007AFF;
+    z-index: 2;
+  }
+
+  .controls {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 2;
+  }
+
+  button {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 12px;
+    background: #007AFF;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 1rem;
+    width: 200px;
+    font-weight: 500;
+    backdrop-filter: blur(10px);
+  }
+
+  button:hover {
+    background: #0056b3;
+    transform: translateY(-2px);
+  }
+
+  #orientation-toggle {
+    background: #5856D6;
+  }
+
+  #orientation-toggle:hover {
+    background: #4644ac;
+  }
+
+  .device-info {
+    position: fixed;
+    bottom: 120px;
+    right: 20px;
+    font-size: 0.9rem;
+    color: #888;
+    z-index: 2;
+    text-align: right;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  }
+
+  .player-list {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 16px;
+    padding: 20px;
+    width: 280px;
+    max-height: 400px;
+    overflow-y: auto;
+    z-index: 3;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .player-list h2 {
+    color: #007AFF;
+    margin-bottom: 15px;
+    font-size: 1.2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 10px;
+  }
+
+  .player-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+    padding: 8px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    transition: all 0.3s ease;
+  }
+
+  .player-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateX(4px);
+  }
+
+  .player-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    margin-right: 12px;
+    object-fit: cover;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .player-name {
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 500;
+  }
+
+  .online-status {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #34C759;
+    margin-left: auto;
+    box-shadow: 0 0 8px rgba(52, 199, 89, 0.5);
+  }
+
+  .device-selector {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 16px;
+    padding: 20px;
+    width: 280px;
+    z-index: 3;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .device-selector h2 {
+    color: #007AFF;
+    margin-bottom: 15px;
+    font-size: 1.2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 10px;
+  }
+
+  .device-option {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+    padding: 8px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .device-option:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateX(4px);
+  }
+
+  .device-icon {
+    width: 36px;
+    height: 36px;
+    margin-right: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .device-name {
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 500;
+  }
+
+  .performance-indicator {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    color: #34C759;
+    z-index: 4;
+  }
+
+  @media (max-width: 768px) {
+    h1 {
+      font-size: 1.8rem;
+    }
+
+    iframe {
+      transform: scale(0.8);
+    }
+
+    .controls {
+      flex-direction: column;
+      align-items: flex-end;
+      bottom: 10px;
+    }
+
+    .device-info {
+      bottom: 160px;
+    }
+
+    button {
+      width: 150px;
+      padding: 10px 20px;
+    }
+
+    .player-list {
+      width: 220px;
+      max-height: 300px;
+    }
+
+    .device-selector {
+      width: 220px;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .device-selector,
+    .player-list {
+      width: 180px;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+    }
+  }
+</style>
+</head>
+<body>
+  <div class="performance-indicator">
+    Detecting system performance...
+  </div>
+
+  <div class="device-selector">
+    <h2>Select Device</h2>
+    <div class="device-option" data-device="iphone14pro" data-os="ios">
+      <div class="device-icon">📱</div>
+      <div class="device-name">iPhone 14 Pro (iOS 17)</div>
+    </div>
+    <div class="device-option" data-device="iphone13" data-os="ios">
+      <div class="device-icon">📱</div>
+      <div class="device-name">iPhone 13 (iOS 17)</div>
+    </div>
+    <div class="device-option" data-device="ipadpro" data-os="ios">
+      <div class="device-icon">📱</div>
+      <div class="device-name">iPad Pro (iOS 17)</div>
+    </div>
+    <div class="device-option" data-device="pixel7" data-os="android">
+      <div class="device-icon">🤖</div>
+      <div class="device-name">Pixel 7 (Android 14)</div>
+    </div>
+    <div class="device-option" data-device="s23" data-os="android">
+      <div class="device-icon">🤖</div>
+      <div class="device-name">Galaxy S23 (Android 14)</div>
+    </div>
+  </div>
+
+  <h1></h1>
+  
+  <div class="emulator-wrapper">
+    <div class="loading">Loading iOS 17 emulator...</div>
+    <iframe 
+      src="https://appetize.io/embed/demo?device=iphone14pro&scale=75&orientation=portrait&osVersion=16&params={\"hidePasscode\":true,\"launchArgs\":[],\"permissions\":{\"camera\":true,\"contacts\":true,\"location\":\"always\",\"microphone\":true,\"notifications\":true,\"photos\":\"always\"},\"iosVersion\":\"16\",\"enableLowPowerMode\":false,\"deviceColor\":\"black\",\"language\":\"en\",\"locale\":\"en_US\",\"timezone\":\"America/Los_Angeles\",\"experimental\":{\"allowInputEvents\":true,\"allowTouchEvents\":true,\"disableActionBar\":true,\"allowGestures\":true,\"allowHomeButton\":true}}" 
+      width="340" 
+      height="700" 
+      frameborder="0" 
+      scrolling="no" 
+      allowfullscreen="">
+    </iframe>
+  </div>
+
+  <div class="player-list">
+    <h2>Connected Users</h2>
+    <div id="players-container">
+      <!-- Players will be dynamically added here -->
+    </div>
+  </div>
+
+  <div class="device-info">
+    Device: iPhone 14 Pro | iOS Version: 17.0
+  </div>
+
+  <div class="controls">
+    <button id="restart">Restart App</button>
+    <button id="orientation-toggle">Toggle Orientation</button>
+  </div>
+
+<script>
+const room = new WebsimSocket();
+
+document.addEventListener('DOMContentLoaded', function() {
+  const iframe = document.querySelector('iframe');
+  const loading = document.querySelector('.loading');
+  const restartButton = document.getElementById('restart');
+  const orientationButton = document.getElementById('orientation-toggle');
+  const playersContainer = document.getElementById('players-container');
+  const performanceIndicator = document.querySelector('.performance-indicator');
+  const deviceOptions = document.querySelectorAll('.device-option');
+  let isPortrait = true;
+  let performanceScore = 0;
+  let currentDevice = 'iPhone 14 Pro';
+
+  room.onPeersChanged = (peers) => {
+    updatePlayerList(peers);
+  };
+
+  function updatePlayerList(peers) {
+    playersContainer.innerHTML = '';
+    
+    Object.entries(peers).forEach(([clientId, {username, avatarUrl}]) => {
+      const playerItem = document.createElement('div');
+      playerItem.className = 'player-item';
+      
+      playerItem.innerHTML = `
+        <img class="player-avatar" src="${avatarUrl}" alt="${username}'s avatar" onerror="this.src='https://via.placeholder.com/36'">
+        <span class="player-name">${username}</span>
+        <span class="online-status"></span>
+      `;
+      
+      playersContainer.appendChild(playerItem);
+    });
+  }
+
+  iframe.addEventListener('load', function() {
+    loading.style.display = 'none';
+  });
+
+  restartButton.addEventListener('click', function() {
+    retryLoad();
+  });
+
+  orientationButton.addEventListener('click', function() {
+    isPortrait = !isPortrait;
+    const orientation = isPortrait ? 'portrait' : 'landscape';
+    const currentSrc = new URL(iframe.src);
+    currentSrc.searchParams.set('orientation', orientation);
+    
+    iframe.style.transition = 'all 0.3s ease';
+    
+    if (isPortrait) {
+      iframe.style.width = '340px';
+      iframe.style.height = '700px';
+    } else {
+      iframe.style.width = '700px';
+      iframe.style.height = '340px';
+    }
+
+    iframe.src = currentSrc.toString();
+    loading.style.display = 'block';
+  });
+
+  async function detectPerformance() {
+    const cores = navigator.hardwareConcurrency || 4;
+    const memory = navigator.deviceMemory || 4;
+    const pixelRatio = window.devicePixelRatio || 1;
+    
+    let score = 0;
+    score += cores > 4 ? 2 : 1;
+    score += memory > 4 ? 2 : 1;
+    score += pixelRatio >= 2 ? 2 : 1;
+    
+    return new Promise(resolve => {
+      let times = [];
+      let lastTime = performance.now();
+      let frame = 0;
+      
+      function checkFrame() {
+        frame++;
+        const now = performance.now();
+        times.push(now - lastTime);
+        lastTime = now;
+        
+        if (frame < 10) {
+          requestAnimationFrame(checkFrame);
+        } else {
+          const fps = 1000 / (times.reduce((a,b) => a + b) / times.length);
+          score += fps > 50 ? 2 : 1;
+          resolve(score);
+        }
+      }
+      requestAnimationFrame(checkFrame);
+    });
+  }
+
+  async function configureDevice() {
+    const score = await detectPerformance();
+    let quality = 'medium';
+    
+    if (score >= 8) {
+      quality = 'high';
+      performanceIndicator.style.color = '#34C759';
+      performanceIndicator.textContent = 'High Performance Mode';
+    } else if (score >= 5) {
+      quality = 'medium';
+      performanceIndicator.style.color = '#FFCC00';
+      performanceIndicator.textContent = 'Medium Performance Mode';
+    } else {
+      quality = 'low';
+      performanceIndicator.style.color = '#FF9500';
+      performanceIndicator.textContent = 'Low Performance Mode';
+    }
+
+    return quality;
+  }
+
+  deviceOptions.forEach(option => {
+    option.addEventListener('click', async () => {
+      const device = option.dataset.device;
+      const os = option.dataset.os;
+      const quality = await configureDevice();
+      
+      let emulatorUrl = '';
+      if (os === 'ios') {
+        emulatorUrl = `https://appetize.io/embed/demo?device=${device}&scale=${quality === 'high' ? 75 : 50}&osVersion=16`;
+      } else {
+        emulatorUrl = `https://appetize.io/embed/demo?device=${device}&scale=${quality === 'high' ? 75 : 50}&osVersion=14`;
+      }
+
+      iframe.src = emulatorUrl;
+      showLoading(device);
+      
+      currentDevice = device;
+      const deviceInfo = document.querySelector('.device-info');
+      deviceInfo.textContent = `Device: ${device} | ${os.toUpperCase()} Version: ${os === 'ios' ? '17.0' : '14.0'}`;
+      
+      broadcastEmulatorAction('device_change', { device, os });
+    });
+  });
+
+  function showLoading(device) {
+    loading.innerHTML = `
+      <div style="text-align: center">
+        <div style="margin-bottom: 10px">Loading ${device} emulator...</div>
+        <div class="loading-spinner"></div>
+      </div>
+    `;
+  }
+
+  function retryLoad() {
+    iframe.src = iframe.src;
+    showLoading(currentDevice);
+  }
+
+  function broadcastEmulatorAction(action, details = {}) {
+    room.send({
+      type: 'emulator_action',
+      action: action,
+      details: details,
+      timestamp: Date.now()
+    });
+  }
+  
+  function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+    };
+  }
+
+  const debouncedUpdateScale = debounce(updateScale, 100);
+  window.addEventListener('resize', debouncedUpdateScale);
+
+  function updateScale() {
+    const wrapper = document.querySelector('.emulator-wrapper');
+    const wrapperWidth = wrapper.clientWidth;
+    const wrapperHeight = wrapper.clientHeight;
+    const iframeWidth = isPortrait ? 340 : 700;
+    const iframeHeight = isPortrait ? 700 : 340;
+    
+    const scaleX = (wrapperWidth * 0.9) / iframeWidth;
+    const scaleY = (wrapperHeight * 0.9) / iframeHeight;
+    const scale = Math.min(scaleX, scaleY, 1);
+    
+    iframe.style.transform = `scale(${scale})`;
+    iframe.style.transformOrigin = 'center center';
+  }
+
+  window.addEventListener('resize', updateScale);
+  updateScale();
+
+  iframe.onerror = function() {
+    loading.innerHTML = `
+      <div style="text-align: center; color: #ff3b30;">
+        <div>Error loading emulator</div>
+        <button onclick="retryLoad()" style="margin-top: 10px">Retry</button>
+      </div>
+    `;
+  };
+
+  window.addEventListener('message', function(event) {
+    if (event.origin === 'https://appetize.io') {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === 'sessionRequested') {
+          iframe.src = iframe.src + '&hidePasscode=true&enableLowPowerMode=false&deviceColor=black&language=en&locale=en_US&timezone=America/Los_Angeles&experimental.allowInputEvents=true&experimental.allowTouchEvents=true&experimental.disableActionBar=true&experimental.allowGestures=true&experimental.allowHomeButton=true';
+        }
+        console.log('Received message from emulator:', data);
+      } catch (error) {
+        console.error('Error parsing message from emulator:', error);
+      }
+    }
+  });
+});
+</script>
+</body></html>

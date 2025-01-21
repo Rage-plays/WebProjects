@@ -1,0 +1,1050 @@
+<html><head><base href="https://websim.ai/advanced-tetris"/><title>Websim Advanced Tetris</title>
+<style>
+@font-face {
+    font-family: 'MonospaceTypewriter';
+    src: url('https://file.garden/ZqqVoKhJuCvIIv7X/MonospaceTypewriter.ttf') format('truetype');
+}
+
+body {
+    background: #121212;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    margin: 0;
+    font-family: 'MonospaceTypewriter', Arial, sans-serif;
+    color: white;
+}
+
+.game-container {
+    display: flex;
+    gap: 20px;
+}
+
+#game-board {
+    width: 300px;
+    height: 600px;
+    border: 2px solid #333;
+    position: relative;
+    background: rgba(0, 0, 0, 0.3);
+    display: block;
+}
+
+.info-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.score-box {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 15px;
+    border-radius: 15px;
+    text-align: center;
+}
+
+.counter {
+    text-align: center;
+}
+
+.counter h2 {
+    margin: 0;
+    font-size: 20px; 
+}
+
+#score, #level, #lines {
+    font-size: 24px; 
+}
+
+.block {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.piece-preview {
+    width: 90px;
+    height: 90px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.next-pieces canvas.piece-preview {
+    margin-bottom: 15px;
+}
+
+.next-pieces {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.controls {
+    margin-top: 20px;
+    text-align: left;
+    font-size: 12px;
+    color: #888;
+}
+
+.controls p {
+    margin: 5px 0;
+}
+
+.held-piece.disabled {
+    opacity: 0.3;
+}
+
+.game-over-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+}
+
+.try-again-btn, .pause-button, .resume-button {
+    padding: 10px 20px;
+    font-size: 18px;
+    background: #666666;
+    border: none;
+    border-radius: 5px;
+    color: white;
+    cursor: pointer;
+    transition: background 0.3s;
+    font-family: 'MonospaceTypewriter', Arial, sans-serif;
+}
+
+.try-again-btn:hover, .pause-button:hover, .resume-button:hover {
+    background: #808080;
+}
+
+.pause-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
+.pause-menu {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    z-index: 100;
+}
+
+.pause-menu.active {
+    display: flex;
+}
+
+.pause-menu h2 {
+    color: white;
+    margin-bottom: 20px;
+}
+
+.pause-menu .controls {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 20px;
+    border-radius: 5px;
+    margin: 0;
+}
+
+/* Update milestone display CSS */
+.milestone-text {
+    font-size: 28px; /* Increased from 24px */
+    text-transform: uppercase;
+}
+
+.milestone-points {
+    font-size: 20px; /* Increased from 18px */
+}
+
+.back-to-back {
+    color: #FFD700; /* Yellow color */
+    font-size: 16px;
+    margin-top: 5px;
+}
+
+/* Add animation keyframes for milestone popup */
+@keyframes milestonePopup {
+    0% { transform: translateY(20px); opacity: 0; }
+    20% { transform: translateY(0); opacity: 1; }
+    80% { transform: translateY(0); opacity: 1; }
+    100% { transform: translateY(-20px); opacity: 0; }
+}
+
+.level-up {
+    animation: levelUp 0.5s ease-out;
+}
+
+.milestone-display {
+    position: static; 
+    color: white;
+    font-family: 'MonospaceTypewriter', Arial, sans-serif;
+    opacity: 0;
+    transition: opacity 0.3s;
+    margin-top: 20px; 
+    text-align: right; 
+    font-weight: bold; 
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.milestone-display.active {
+    opacity: 1;
+    animation: milestonePopup 1.5s ease-out forwards;
+}
+
+.milestone-text {
+    font-size: 24px;
+    text-transform: uppercase;
+}
+
+.milestone-points {
+    font-size: 18px;
+}
+</style>
+</head>
+<body>
+<div class="game-container">
+    <div class="info-panel">
+        <div class="score-box">
+            <h2>Hold</h2>
+            <canvas class="piece-preview" id="hold-piece" width="120" height="120"></canvas>
+        </div>
+        <div class="counter">
+            <h2>Score</h2>
+            <div id="score">0</div>
+        </div>
+        <div class="counter">
+            <h2>Level</h2>
+            <div id="level">1</div>
+        </div>
+        <div class="counter">
+            <h2>Lines</h2>
+            <div id="lines">0</div>
+        </div>
+        <div class="milestone-display"></div> 
+    </div>
+    <canvas id="game-board" width="300" height="600"></canvas>
+    <div class="info-panel">
+        <div class="score-box next-pieces">
+            <h2>Next</h2>
+            <canvas class="piece-preview" id="next-piece-0" width="120" height="120"></canvas>
+            <canvas class="piece-preview" id="next-piece-1" width="120" height="120"></canvas>
+            <canvas class="piece-preview" id="next-piece-2" width="120" height="120"></canvas>
+            <canvas class="piece-preview" id="next-piece-3" width="120" height="120"></canvas>
+        </div>
+    </div>
+    <button class="pause-button">Controls</button>
+    <div class="pause-menu">
+        <h2>Controls</h2>
+        <div class="controls">
+            <p>← → : Move left/right</p>
+            <p>↑ : Rotate clockwise</p>
+            <p>Ctrl + ↑ : Rotate counter-clockwise</p>
+            <p>↓ : Soft drop</p>
+            <p>Space : Hard drop</p>
+            <p>Shift : Hold piece</p>
+        </div>
+        <button class="resume-button">Resume</button>
+    </div>
+</div>
+
+<script>
+class Tetris {
+    constructor() {
+        this.boardWidth = 10;
+        this.boardHeight = 20;
+        this.board = Array(this.boardHeight).fill().map(() => Array(this.boardWidth).fill(0));
+        this.colors = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF', '#FFA500'];
+        this.shapes = [
+            [[1,1,1,1]], // I
+            [[1,1],[1,1]], // O
+            [[1,1,1],[0,1,0]], // T
+            [[1,1,1],[1,0,0]], // L
+            [[1,1,1],[0,0,1]], // J
+            [[1,1,0],[0,1,1]], // S
+            [[0,1,1],[1,1,0]]  // Z
+        ];
+        this.currentPiece = null;
+        this.pieceBag = this.shuffleBag();
+        this.nextPieces = [];
+        this.heldPiece = null;
+        this.canHold = true;
+        this.score = 0;
+        this.displayedScore = 0;
+        this.targetScore = 0;
+        this.lines = 0;
+        this.startTime = Date.now();
+        this.sessionTime = 0;
+        this.lastScoreUpdateTime = 0;
+        this.level = 1;
+        this.gameOver = false;
+        this.dropInterval = 1000;
+        this.lastDrop = Date.now();
+        this.keysPressed = {};
+        this.keyDownTimes = {};
+        this.lastMoveTimes = {};
+        this.activeKey = null;
+        this.autoRepeatDelay = 150; // 0.15 seconds before auto-repeat starts
+        this.autoRepeatInterval = 50; // How frequently the piece moves during auto-repeat
+        this.lockDelay = 2000; // 2 seconds in milliseconds
+        this.shortLockDelay = 500; // 0.5 seconds in milliseconds for inactive pieces
+        this.lastMoveTime = null;
+        this.lockTimer = null;
+        this.paused = false;
+        this.gameEndTime = null; // Added property
+        this.lastWasTetris = false; 
+        this.backToBackActive = false; 
+
+        this.init();
+    }
+
+    easeOutQuad(t) {
+        return t * (2 - t);
+    }
+
+    formatTime(ms) {
+        const seconds = Math.floor(ms / 1000);
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = seconds % 60;
+        return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+    }
+
+    updateScoreDisplay() {
+        if (this.displayedScore !== this.targetScore) {
+            const now = Date.now();
+            const elapsed = now - this.lastScoreUpdateTime;
+            const duration = 1000; // Animation duration in ms
+            
+            if (elapsed < duration) {
+                const progress = this.easeOutQuad(elapsed / duration);
+                this.displayedScore = Math.round(this.displayedScore + (this.targetScore - this.displayedScore) * progress);
+            } else {
+                this.displayedScore = this.targetScore;
+            }
+            
+            document.getElementById('score').textContent = this.displayedScore.toLocaleString();
+        }
+    }
+
+    showMilestone(type, points) {
+        const milestoneDisplay = document.querySelector('.milestone-display');
+        let milestoneHTML = `
+            <div class="milestone-text">${type}</div>
+            <div class="milestone-points">+${points} pts</div>`;
+            
+        if (this.backToBackActive) {
+            milestoneHTML += `<div class="back-to-back">Back-to-Back</div>`;
+        }
+        
+        milestoneDisplay.innerHTML = milestoneHTML;
+        milestoneDisplay.classList.remove('active');
+        void milestoneDisplay.offsetWidth; // Force reflow
+        milestoneDisplay.classList.add('active');
+    }
+
+    init() {
+        document.addEventListener('keydown', this.handleInput.bind(this));
+        document.addEventListener('keyup', this.handleKeyUp.bind(this));
+        while (this.nextPieces.length < 4) {
+            this.nextPieces.push(this.getNextPieceFromBag());
+        }
+        this.spawnPiece();
+        this.gameLoop();
+        document.querySelector('.pause-button').addEventListener('click', () => {
+            this.togglePause();
+        });
+        document.querySelector('.resume-button').addEventListener('click', () => {
+            this.togglePause();
+        });
+    }
+
+    togglePause() {
+        this.paused = !this.paused;
+        const menu = document.querySelector('.pause-menu');
+        if (this.paused) {
+            menu.classList.add('active');
+        } else {
+            menu.classList.remove('active');
+        }
+    }
+
+    reset() {
+        this.board = Array(this.boardHeight).fill().map(() => Array(this.boardWidth).fill(0));
+        this.currentPiece = null;
+        this.pieceBag = this.shuffleBag();
+        this.nextPieces = [];
+        this.heldPiece = null;
+        this.canHold = true;
+        this.score = 0;
+        this.displayedScore = 0;
+        this.targetScore = 0;
+        this.lines = 0;
+        this.level = 1;
+        this.gameOver = false;
+        this.dropInterval = 1000;
+        this.gameEndTime = null; // Reset gameEndTime
+        this.lastWasTetris = false;
+        this.backToBackActive = false;
+        document.getElementById('score').textContent = '0';
+        document.getElementById('lines').textContent = '0';
+        document.getElementById('level').textContent = '1';
+        this.startTime = Date.now();
+        while (this.nextPieces.length < 4) {
+            this.nextPieces.push(this.getNextPieceFromBag());
+        }
+        this.spawnPiece();
+        this.lastDrop = Date.now();
+        this.resetLockTimer();
+    }
+
+    shuffleBag() {
+        const bag = Array.from({length: 7}, (_, i) => i);
+        for (let i = bag.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [bag[i], bag[j]] = [bag[j], bag[i]];
+        }
+        return bag;
+    }
+
+    getNextPieceFromBag() {
+        if (this.pieceBag.length === 0) {
+            this.pieceBag = this.shuffleBag();
+        }
+        const shapeIndex = this.pieceBag.pop();
+        const shape = this.shapes[shapeIndex];
+        return {
+            shape: shape,
+            color: this.colors[shapeIndex],
+            x: Math.floor((this.boardWidth - shape[0].length) / 2),
+            y: 0,
+            index: shapeIndex
+        };
+    }
+
+    spawnPiece() {
+        while (this.nextPieces.length < 4) {
+            this.nextPieces.push(this.getNextPieceFromBag());
+        }
+
+        this.currentPiece = this.nextPieces.shift();
+        this.nextPieces.push(this.getNextPieceFromBag());
+        this.displayNextPieces();
+        
+        this.resetLockTimer();
+
+        if (this.checkCollision(this.currentPiece)) {
+            this.gameOver = true;
+            this.gameEndTime = Date.now(); // Record the end time when game is over
+        }
+    }
+
+    checkCollision(piece) {
+        return piece.shape.some((row, dy) => {
+            return row.some((cell, dx) => {
+                if (cell) {
+                    const newX = piece.x + dx;
+                    const newY = piece.y + dy;
+                    return newX < 0 || newX >= this.boardWidth ||
+                        newY >= this.boardHeight ||
+                        (newY >= 0 && this.board[newY][newX]);
+                }
+                return false;
+            });
+        });
+    }
+
+    rotatePiece() {
+        const rotated = {
+            ...this.currentPiece,
+            shape: this.currentPiece.shape[0].map((_, i) =>
+                this.currentPiece.shape.map(row => row[i]).reverse()
+            )
+        };
+
+        const kicks = [
+            {x: 0, y: 0},
+            {x: -1, y: 0},
+            {x: 1, y: 0},
+            {x: 2, y: 0},
+            {x: -2, y: 0},
+            {x: 0, y: -1},
+            {x: -1, y: -1},
+            {x: 1, y: -1}
+        ];
+
+        for (const kick of kicks) {
+            const kickedPiece = {
+                ...rotated,
+                x: rotated.x + kick.x,
+                y: rotated.y + kick.y
+            };
+
+            if (!this.checkCollision(kickedPiece)) {
+                this.currentPiece = kickedPiece;
+                this.resetLockTimer();
+                return;
+            }
+        }
+    }
+
+    rotatePieceCounterClockwise() {
+        const rotated = {
+            ...this.currentPiece,
+            shape: this.currentPiece.shape[0].map((_, i) =>
+                this.currentPiece.shape.map(row => row[row.length - 1 - i])
+            )
+        };
+
+        const kicks = [
+            {x: 0, y: 0},
+            {x: -1, y: 0},
+            {x: 1, y: 0},
+            {x: 2, y: 0},
+            {x: -2, y: 0},
+            {x: 0, y: -1},
+            {x: -1, y: -1},
+            {x: 1, y: -1}
+        ];
+
+        for (const kick of kicks) {
+            const kickedPiece = {
+                ...rotated,
+                x: rotated.x + kick.x,
+                y: rotated.y + kick.y
+            };
+
+            if (!this.checkCollision(kickedPiece)) {
+                this.currentPiece = kickedPiece;
+                this.resetLockTimer();
+                return;
+            }
+        }
+    }
+
+    movePiece(dx, dy) {
+        const movedPiece = {
+            ...this.currentPiece,
+            x: this.currentPiece.x + dx,
+            y: this.currentPiece.y + dy
+        };
+
+        if (!this.checkCollision(movedPiece)) {
+            this.currentPiece = movedPiece;
+            if (dx !== 0) {
+                this.lastMoveTime = Date.now();
+            }
+
+            if (dy > 0 && this.checkCollision({...movedPiece, y: movedPiece.y + 1})) {
+                this.startLockTimer();
+            } else if (dy > 0) {
+                this.resetLockTimer();
+            }
+            return true;
+        }
+
+        if (dy > 0) {
+            this.startLockTimer();
+        }
+        return false;
+    }
+
+    startLockTimer() {
+        if (!this.lockTimer) {
+            this.lockTimer = Date.now();
+        }
+    }
+
+    resetLockTimer() {
+        this.lockTimer = null;
+        this.lastMoveTime = null;
+    }
+
+    hardDrop() {
+        while (this.movePiece(0, 1)) {}
+        this.lockPiece();
+    }
+
+    lockPiece() {
+        this.currentPiece.shape.forEach((row, dy) => {
+            row.forEach((cell, dx) => {
+                if (cell) {
+                    const y = this.currentPiece.y + dy;
+                    const x = this.currentPiece.x + dx;
+                    if (y >= 0) {
+                        this.board[y][x] = this.currentPiece.color;
+                    }
+                }
+            });
+        });
+
+        this.clearLines();
+        this.canHold = true;
+        this.displayHeldPiece();
+        this.spawnPiece();
+    }
+
+    clearLines() {
+        let linesCleared = 0;
+        let allClear = true;
+
+        for (let y = this.boardHeight - 1; y >= 0; y--) {
+            if (this.board[y].every(cell => cell !== 0)) {
+                this.board.splice(y, 1);
+                this.board.unshift(Array(this.boardWidth).fill(0));
+                linesCleared++;
+                y++;
+            }
+        }
+
+        for (let y = 0; y < this.boardHeight; y++) {
+            if (this.board[y].some(cell => cell !== 0)) {
+                allClear = false;
+                break;
+            }
+        }
+
+        if (linesCleared > 0) {
+            this.lines += linesCleared;
+            document.getElementById('lines').textContent = this.lines;
+            
+            const oldLevel = this.level;
+            this.level = Math.floor(this.lines / 10) + 1;
+            
+            // Update level display if changed
+            if (this.level !== oldLevel) {
+                document.getElementById('level').textContent = this.level;
+                // Speed up drop interval (60fps = 16.67ms)
+                this.dropInterval = Math.max(1000 - ((this.level - 1) * 100), 100); // Minimum 100ms
+            }
+
+            const scoreMultiplier = {
+                1: 100,  
+                2: 300,  
+                3: 500,  
+                4: 800   
+            }[linesCleared] || 0;
+            
+            let points = scoreMultiplier * this.level;
+            const oldScore = this.score;
+            
+            // Handle Back-to-Back Tetris
+            if (linesCleared === 4) {
+                if (this.lastWasTetris) {
+                    this.backToBackActive = true;
+                    points *= 1.5; // 50% bonus for B2B Tetris
+                }
+                this.lastWasTetris = true;
+            } else {
+                this.lastWasTetris = false;
+                this.backToBackActive = false;
+            }
+
+            this.score += points;
+            this.targetScore = this.score;
+            this.lastScoreUpdateTime = Date.now();
+
+            const milestoneTypes = {
+                1: 'Single',
+                2: 'Double',
+                3: 'Triple',
+                4: 'Tetris'
+            };
+            
+            this.showMilestone(milestoneTypes[linesCleared], points);
+        }
+    }
+
+    getDropPosition() {
+        if (!this.currentPiece) return null;
+
+        let ghost = {
+            ...this.currentPiece,
+            y: this.currentPiece.y
+        };
+
+        while (!this.checkCollision({...ghost, y: ghost.y + 1})) {
+            ghost.y++;
+        }
+
+        return ghost;
+    }
+
+    holdPiece() {
+        if (!this.canHold) return;
+        
+        if (this.heldPiece === null) {
+            this.heldPiece = {
+                shape: this.shapes[this.currentPiece.index],
+                color: this.currentPiece.color,
+                index: this.currentPiece.index
+            };
+            this.currentPiece = this.nextPieces.shift();
+            this.nextPieces.push(this.getNextPieceFromBag());
+        } else {
+            const temp = {
+                shape: this.shapes[this.currentPiece.index],
+                color: this.currentPiece.color,
+                index: this.currentPiece.index
+            };
+            this.currentPiece = {
+                shape: this.shapes[this.heldPiece.index],
+                color: this.heldPiece.color,
+                index: this.heldPiece.index,
+                x: Math.floor((this.boardWidth - this.shapes[this.heldPiece.index][0].length) / 2),
+                y: 0
+            };
+            this.heldPiece = temp;
+        }
+        
+        this.canHold = false;
+        this.displayHeldPiece();
+        this.displayNextPieces();
+    }
+
+    handleInput(event) {
+        if (this.gameOver || this.paused || this.keysPressed[event.keyCode]) return;
+
+        this.keysPressed[event.keyCode] = true;
+        this.keyDownTimes[event.keyCode] = Date.now();
+
+        switch(event.keyCode) {
+            case 37: // Left Arrow
+            case 65: // A
+                if (this.movePiece(-1, 0)) {
+                    this.resetLockTimer();
+                }
+                break;
+            case 39: // Right Arrow
+            case 68: // D
+                if (this.movePiece(1, 0)) {
+                    this.resetLockTimer();
+                }
+                break;
+            case 40: // Down Arrow
+            case 83: // S
+                this.movePiece(0, 1);
+                break;
+            case 38: // Up Arrow
+                if (event.ctrlKey) {
+                    this.rotatePieceCounterClockwise();
+                } else {
+                    this.rotatePiece();
+                }
+                break;
+            case 32: // Space
+                this.hardDrop();
+                break;
+            case 67: // C key
+            case 16: // Shift
+                this.holdPiece();
+                break;
+        }
+        this.draw();
+    }
+
+    handleKeyUp(event) {
+        delete this.keysPressed[event.keyCode];
+        delete this.keyDownTimes[event.keyCode];
+        delete this.lastMoveTimes[event.keyCode];
+    }
+
+    gameLoop() {
+        if (!this.paused) {
+            const now = Date.now();
+
+            Object.entries(this.keysPressed).forEach(([keyCode, active]) => {
+                if (active) {
+                    const timeHeld = now - this.keyDownTimes[keyCode];
+                    if (timeHeld >= this.autoRepeatDelay) {
+                        if (!this.lastMoveTimes[keyCode] || now - this.lastMoveTimes[keyCode] >= this.autoRepeatInterval) {
+                            switch(parseInt(keyCode)) {
+                                case 37: // Left Arrow
+                                case 65: // A
+                                    if (this.movePiece(-1, 0)) {
+                                        this.resetLockTimer();
+                                    }
+                                    break;
+                                case 39: // Right Arrow
+                                case 68: // D
+                                    if (this.movePiece(1, 0)) {
+                                        this.resetLockTimer();
+                                    }
+                                    break;
+                                case 40: // Down Arrow
+                                case 83: // S
+                                    this.movePiece(0, 1);
+                                    break;
+                            }
+                            this.lastMoveTimes[keyCode] = now;
+                        }
+                    }
+                }
+            });
+
+            if (!this.gameOver) {
+                if (now - this.lastDrop > this.dropInterval) {
+                    this.movePiece(0, 1);
+                    this.lastDrop = now;
+                }
+
+                if (this.lockTimer) {
+                    const currentDelay = (now - (this.lastMoveTime || 0) < 500) ? 
+                        this.lockDelay : 
+                        this.shortLockDelay;
+                    
+                    if (now - this.lockTimer >= currentDelay) {
+                        this.lockPiece();
+                        this.resetLockTimer();
+                    }
+                }
+
+                this.updateScoreDisplay();
+            }
+
+            this.draw();
+        }
+        requestAnimationFrame(() => this.gameLoop());
+    }
+
+    draw() {
+        const canvas = document.getElementById('game-board');
+        const ctx = canvas.getContext('2d');
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        this.board.forEach((row, y) => {
+            row.forEach((cell, x) => {
+                if (cell) {
+                    this.drawBeveledBlock(ctx, x, y, cell);
+                }
+            });
+        });
+
+        const ghostPiece = this.getDropPosition();
+        if (ghostPiece) {
+            ghostPiece.shape.forEach((row, dy) => {
+                row.forEach((cell, dx) => {
+                    if (cell) {
+                        this.drawBeveledBlock(ctx, ghostPiece.x + dx, ghostPiece.y + dy, 'rgba(255, 255, 255, 0.2)', 0.2);
+                    }
+                });
+            });
+        }
+
+        if (this.currentPiece) {
+            this.currentPiece.shape.forEach((row, dy) => {
+                row.forEach((cell, dx) => {
+                    if (cell) {
+                        this.drawBeveledBlock(ctx, this.currentPiece.x + dx, this.currentPiece.y + dy, this.currentPiece.color);
+                    }
+                });
+            });
+        }
+
+        if (this.gameOver) {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = 'white';
+            ctx.font = '35px MonospaceTypewriter';
+            ctx.textAlign = 'center';
+            ctx.fillText('Game Over!', canvas.width/2, canvas.height/2 - 45);
+
+            ctx.font = '20px MonospaceTypewriter';
+            ctx.fillText(`Final Score: ${this.score}`, canvas.width/2, canvas.height/2);
+            ctx.fillText(`Lines Cleared: ${this.lines}`, canvas.width/2, canvas.height/2 + 30);
+            
+            this.sessionTime = this.gameEndTime - this.startTime;  
+            ctx.fillText(`Time: ${this.formatTime(this.sessionTime)}`, canvas.width/2, canvas.height/2 + 60);
+
+            const btnWidth = 120;
+            const btnHeight = 40;
+            const btnX = canvas.width/2 - btnWidth/2;
+            const btnY = canvas.height/2 + 90;
+
+            // Draw button with rounded corners
+            ctx.fillStyle = '#666666';
+            ctx.beginPath();
+            ctx.moveTo(btnX + 5, btnY);
+            ctx.lineTo(btnX + btnWidth - 5, btnY);
+            ctx.quadraticCurveTo(btnX + btnWidth, btnY, btnX + btnWidth, btnY + 5);
+            ctx.lineTo(btnX + btnWidth, btnY + btnHeight - 5);
+            ctx.quadraticCurveTo(btnX + btnWidth, btnY + btnHeight, btnX + btnWidth - 5, btnY + btnHeight);
+            ctx.lineTo(btnX + 5, btnY + btnHeight);
+            ctx.quadraticCurveTo(btnX, btnY + btnHeight, btnX, btnY + btnHeight - 5);
+            ctx.lineTo(btnX, btnY + 5);
+            ctx.quadraticCurveTo(btnX, btnY, btnX + 5, btnY);
+            ctx.fill();
+
+            ctx.fillStyle = 'white';
+            ctx.font = '18px MonospaceTypewriter';
+            ctx.fillText('Try Again', canvas.width/2, btnY + 25);
+
+            if (!canvas.tryAgainListener) {
+                canvas.addEventListener('mousemove', (e) => {
+                    const rect = canvas.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+
+                    canvas.isHovered = (
+                        x >= btnX && x <= btnX + btnWidth &&
+                        y >= btnY && y <= btnY + btnHeight
+                    );
+                });
+
+                canvas.tryAgainListener = (e) => {
+                    const rect = canvas.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+
+                    if (x >= btnX && x <= btnX + btnWidth &&
+                        y >= btnY && y <= btnY + btnHeight) {
+                        this.reset();
+                    }
+                };
+                canvas.addEventListener('click', canvas.tryAgainListener);
+            }
+        }
+    }
+
+    drawBeveledBlock(ctx, x, y, color, alpha = 1, scale = 1) {
+        const blockSize = 30 * scale;
+        ctx.fillStyle = color;
+        ctx.fillRect(x * 30, y * 30, blockSize, blockSize);
+        ctx.beginPath();
+        ctx.fillStyle = `rgba(255, 255, 255, ${0.3 * alpha})`;
+        ctx.moveTo(x * 30, y * 30);
+        ctx.lineTo((x * 30) + blockSize, y * 30);
+        ctx.lineTo((x * 30) + blockSize * 0.9, (y * 30) + blockSize * 0.1);
+        ctx.lineTo((x * 30) + blockSize * 0.1, (y * 30) + blockSize * 0.1);
+        ctx.lineTo((x * 30) + blockSize * 0.1, (y * 30) + blockSize * 0.9);
+        ctx.lineTo(x * 30, (y * 30) + blockSize);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.fillStyle = `rgba(0, 0, 0, ${0.2 * alpha})`;
+        ctx.moveTo((x * 30) + blockSize, y * 30);
+        ctx.lineTo((x * 30) + blockSize, (y * 30) + blockSize);
+        ctx.lineTo(x * 30, (y * 30) + blockSize);
+        ctx.lineTo((x * 30) + blockSize * 0.1, (y * 30) + blockSize * 0.9);
+        ctx.lineTo((x * 30) + blockSize * 0.9, (y * 30) + blockSize * 0.9);
+        ctx.lineTo((x * 30) + blockSize * 0.9, (y * 30) + blockSize * 0.1);
+        ctx.fill();
+    }
+
+    displayHeldPiece() {
+        const canvas = document.getElementById('hold-piece');
+        const ctx = canvas.getContext('2d');
+        
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        if (this.heldPiece) {
+            const pieceWidth = this.heldPiece.shape[0].length;
+            const pieceHeight = this.heldPiece.shape.length;
+            const scale = pieceWidth > 3 ? 0.8 : 1;
+            
+            let xOffset = 1;
+            let yOffset = 1;
+        
+            if (pieceWidth === 4) {
+                xOffset = 0.5;
+                yOffset = 2;
+            } 
+            else if (pieceWidth === 2) {
+                xOffset = 1;
+                yOffset = 1;
+            } else {
+                xOffset = 0.5;
+                yOffset = 1;
+            }
+            
+            this.heldPiece.shape.forEach((row, y) => {
+                row.forEach((cell, x) => {
+                    if (cell) {
+                        this.drawBeveledBlock(
+                            ctx, 
+                            (x + xOffset) * scale, 
+                            (y + yOffset) * scale, 
+                            this.heldPiece.color,
+                            1,
+                            scale
+                        );
+                    }
+                });
+            });
+        }
+        
+        if (!this.canHold) {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+    }
+
+    displayNextPieces() {
+        for (let i = 0; i < 4; i++) {
+            const canvas = document.getElementById(`next-piece-${i}`);
+            const ctx = canvas.getContext('2d');
+            const piece = this.nextPieces[i];
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            if (piece) {
+                const pieceWidth = piece.shape[0].length;
+                const pieceHeight = piece.shape.length;
+                const scale = pieceWidth > 3 ? 0.8 : 1;
+                
+                let xOffset = 1;
+                let yOffset = 1;
+        
+                if (pieceWidth === 4) {
+                    xOffset = 0.5;
+                    yOffset = 2;
+                } 
+                else if (pieceWidth === 2) {
+                    xOffset = 1;
+                    yOffset = 1;
+                } else {
+                    xOffset = 0.5;
+                    yOffset = 1;
+                }
+                
+                piece.shape.forEach((row, y) => {
+                    row.forEach((cell, x) => {
+                        if (cell) {
+                            this.drawBeveledBlock(
+                                ctx, 
+                                (x + xOffset) * scale, 
+                                (y + yOffset) * scale, 
+                                piece.color,
+                                1,
+                                scale
+                            );
+                        }
+                    });
+                });
+            }
+        }
+    }
+}
+
+// Start the game
+new Tetris();
+</script>
+</body></html>

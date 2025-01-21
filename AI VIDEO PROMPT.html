@@ -1,0 +1,675 @@
+<html><head><base href="https://websim.ai/sites/"></base><style>
+body {
+    font-family: Arial, sans-serif;
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 20px;
+    background: #1a1a1a;
+    color: #fff;
+    box-sizing: border-box;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.video-container {
+    width: 100%;
+    aspect-ratio: 16/9;
+    background: #000;
+    position: relative;
+    overflow: hidden;
+    border-radius: 10px;
+}
+
+.controls {
+    background: #333;
+    padding: 20px;
+    border-radius: 10px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+input[type="text"], input[type="number"], select {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    background: #444;
+    color: #fff;
+    box-sizing: border-box;
+}
+
+button {
+    background: #4CAF50;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s;
+    margin: 5px;
+}
+
+button:hover {
+    background: #45a049;
+}
+
+.frame {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 0.5s;
+}
+
+.frame.active {
+    opacity: 1;
+}
+
+.loading {
+    display: none;
+    text-align: center;
+    padding: 20px;
+    font-style: italic;
+}
+
+.progress-info {
+    text-align: center;
+    margin-top: 10px;
+    color: #4CAF50;
+    font-weight: bold;
+}
+
+.playback-controls {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 5px;
+    background: #444;
+    border-radius: 5px;
+    margin-top: 10px;
+    position: relative;
+}
+
+.progress {
+    width: 0%;
+    height: 100%;
+    background: #4CAF50;
+    border-radius: 5px;
+    transition: width 0.3s;
+}
+
+.comments-section {
+    margin-top: 30px;
+    width: 100%;
+    max-width: 800px;
+}
+
+.comment-form {
+    width: 100%;
+}
+
+.comment-form textarea {
+    width: 100%;
+    min-height: 100px;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    background: #444;
+    color: #fff;
+    box-sizing: border-box;
+    resize: vertical;
+}
+
+.comments-list {
+    margin-top: 20px;
+}
+
+.comment {
+    background: #333;
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+
+.comment-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+    color: #aaa;
+    font-size: 0.9em;
+}
+
+.comment-text {
+    line-height: 1.4;
+}
+
+@media (max-width: 600px) {
+    body {
+        padding: 10px;
+    }
+    
+    .controls {
+        padding: 15px;
+    }
+    
+    button {
+        padding: 8px 16px;
+        font-size: 14px;
+    }
+}
+</style></head>
+<body>
+<div class="container">
+    <h1>AI Video Generator</h1>
+    <div class="controls">
+        <input type="text" id="prompt" placeholder="Enter your video prompt (e.g., 'A sunset over the ocean')">
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <label for="frameCount">Number of frames (max 24):</label>
+                <input 
+                    type="number" 
+                    id="frameCount" 
+                    min="1" 
+                    max="24" 
+                    value="24" 
+                    style="width: 70px; padding: 5px; background: #444; color: #fff; border: none; border-radius: 5px;">
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <label for="movement">Movement intensity:</label>
+                <select id="movement" style="padding: 5px; background: #444; color: #fff; border: none; border-radius: 5px;">
+                    <option value="high">High movement</option>
+                    <option value="medium">Medium movement</option>
+                    <option value="low">Low movement</option>
+                </select>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <label for="model">Quality:</label>
+                <select id="model" style="padding: 5px; background: #444; color: #fff; border: none; border-radius: 5px;">
+                    <option value="gpt4">Realistic (Very Slow)</option>
+                    <option value="dalle3">High (Slow)</option>
+                    <option value="opus">Cartoon (A little slow)</option>
+                    <option value="sonnet">Medium (Normal)</option>
+                    <option value="haiku">Low (Fast)</option>
+                    <option value="gpt35">Super Low (Super Fast)</option>
+                    <option value="minimal">Super ultra fast (Super ultra fast)</option>
+                </select>
+            </div>
+        </div>
+        <button onclick="generateVideo()">Generate Video</button>
+        <button onclick="generateVideo(true)">Experimental: Generate all frames at the same time</button>
+        <div class="playback-controls">
+            <button onclick="playVideo()">Play</button>
+            <button onclick="pauseVideo()">Pause</button>
+            <button onclick="restartVideo()">Restart</button>
+            <button onclick="downloadVideo()">Download Video</button>
+        </div>
+        <div class="progress-bar">
+            <div class="progress" id="progress"></div>
+        </div>
+        <div class="progress-info" id="progressInfo"></div>
+    </div>
+    <div class="video-container" id="videoContainer">
+        <!-- Frames will be inserted here -->
+    </div>
+    <div class="loading" id="loading">Generating your video frames with AI...</div>
+    <div class="comments-section">
+        <h2>Comments & Feedback</h2>
+        <div class="comment-form">
+            <textarea id="commentText" placeholder="Share your experience, report issues, or suggest improvements..."></textarea>
+            <button onclick="submitComment()">Submit Comment</button>
+        </div>
+        <div class="comments-list" id="commentsList">
+            <!-- Comments will be inserted here -->
+        </div>
+    </div>
+</div>
+
+<script>
+let currentFrame = 0;
+let frames = [];
+let isPlaying = false;
+let playInterval;
+let lastFrameSvg = '';
+const FRAME_DURATION = 200;
+
+async function getOpenAIResponse(framePrompt, model) {
+    const endpoint = model === 'dalle3' ? '/api/ai/dalle' : '/api/ai/gpt';
+    
+    const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            model: model,
+            prompt: framePrompt.prompt,
+            max_tokens: model === 'dalle3' ? undefined : 2000,
+            temperature: 0.7,
+            data: framePrompt.data
+        })
+    });
+
+    if (!response.ok) {
+        throw new Error(`OpenAI API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
+}
+
+async function rateLimitedRequest(framePrompt, index, maxRequestsPerSecond = 2) {
+    const delay = Math.floor(index / maxRequestsPerSecond) * 2000;
+    await new Promise(resolve => setTimeout(resolve, delay));
+    
+    const selectedModel = document.getElementById('model').value;
+    let retries = 3;
+    
+    while (retries > 0) {
+        try {
+            let response;
+            
+            if (['gpt4', 'gpt35', 'dalle3'].includes(selectedModel)) {
+                response = await getOpenAIResponse(framePrompt, selectedModel);
+            } else {
+                response = await fetch('/api/ai_completion', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(framePrompt)
+                });
+            }
+            
+            if (response.status === 429) {
+                retries--;
+                if (retries > 0) {
+                    const backoffDelay = (4 - retries) * 3000;
+                    await new Promise(resolve => setTimeout(resolve, backoffDelay));
+                    continue;
+                }
+                throw new Error('Rate limit reached. Please try again with fewer frames or use sequential generation.');
+            }
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            return response;
+            
+        } catch (error) {
+            retries--;
+            if (retries > 0) {
+                const backoffDelay = (4 - retries) * 2000;
+                await new Promise(resolve => setTimeout(resolve, backoffDelay));
+            } else {
+                throw error;
+            }
+        }
+    }
+}
+
+async function generateVideo(isParallel = false) {
+    const prompt = document.getElementById('prompt').value;
+    const frameCountInput = document.getElementById('frameCount');
+    const totalFrames = Math.min(Math.max(parseInt(frameCountInput.value) || 24, 1), 24);
+    const movement = document.getElementById('movement').value;
+    const selectedModel = document.getElementById('model').value;
+
+    if (!prompt.trim()) {
+        console.error('Please enter a prompt');
+        return;
+    }
+
+    const container = document.getElementById('videoContainer');
+    const loading = document.getElementById('loading');
+    const progressInfo = document.getElementById('progressInfo');
+    const progressBar = document.querySelector('.progress');
+
+    container.innerHTML = '';
+    frames = [];
+    currentFrame = 0;
+    lastFrameSvg = '';
+    loading.style.display = 'block';
+    progressBar.style.width = '0%';
+    progressInfo.textContent = `Generating frames: 0/${totalFrames}`;
+
+    try {
+        const qualityContext = {
+            'gpt4': 'Generate extremely detailed, photorealistic vector graphics with maximum detail and complexity.',
+            'dalle3': 'Generate high quality, detailed vector graphics with strong attention to realism.',
+            'opus': 'Generate cartoon-style vector graphics with good detail and stylized elements.',
+            'sonnet': 'Generate medium quality vector graphics balancing detail and performance.',
+            'haiku': 'Generate simplified vector graphics focusing on core elements.',
+            'gpt35': 'Generate basic vector graphics with minimal detail.',
+            'minimal': 'Generate ultra-simplified vector graphics using basic shapes only.'
+        }[selectedModel];
+
+        const movementIntensity = {
+            high: "Make significant changes between frames while maintaining coherence. Elements should move dynamically with large transitions.",
+            medium: "Make moderate changes between frames. Elements should move naturally but not too dramatically.",
+            low: "Make subtle changes between frames. Elements should move very gradually with minimal transitions."
+        }[movement];
+
+        if (isParallel) {
+            const framePromises = [];
+            const completedFrames = new Set();
+            const batchSize = 4;
+            
+            for (let batchStart = 0; batchStart < totalFrames; batchStart += batchSize) {
+                const batchEnd = Math.min(batchStart + batchSize, totalFrames);
+                const batchPromises = [];
+                
+                for (let i = batchStart; i < batchEnd; i++) {
+                    const framePrompt = {
+                        prompt: `Generate a hyper-realistic SVG animation frame for the prompt: "${prompt}".
+                        This frame MUST maintain strong visual consistency with the previous frame.
+                        Make this frame ${i + 1} of ${totalFrames} in a smooth animation sequence.
+
+                        Movement Instructions: ${movementIntensity}
+
+                        Quality Context: ${qualityContext}
+
+                        Technical requirements:
+                        1. Create HYPER-REALISTIC rendering:
+                           - Use detailed gradients and shading
+                           - Include realistic lighting and shadows
+                           - Add fine texture details
+                           - Implement precise perspective and depth
+                        2. ${movement === 'high' ? 'Create dynamic movement while maintaining visual coherence' : 
+                           movement === 'medium' ? 'Create steady, natural movement between frames' : 
+                           'Create subtle, minimal movement between frames'}
+                        3. Use the same element IDs and classes between frames
+                        4. Follow physically accurate motion paths
+                        5. Add model name "${selectedModel.toUpperCase()}" in top right corner of SVG:
+                           - Use semi-transparent background
+                           - White text
+                           - Size proportional to viewport
+                           - Position at (viewBox width - 100, 30)
+                        
+                        Create detailed vector graphics with cinematic quality and photorealistic details.
+
+                        <typescript-interface>
+                        interface Response {
+                            svg: string;
+                        }
+                        </typescript-interface>`,
+                        data: { 
+                            frameNumber: i,
+                            totalFrames: totalFrames,
+                            previousFrame: lastFrameSvg,
+                            movementType: movement,
+                            progress: (i / totalFrames) * 100,
+                            model: selectedModel
+                        }
+                    };
+
+                    const framePromise = rateLimitedRequest(framePrompt, i)
+                        .then(response => response.json())
+                        .then(frameData => {
+                            completedFrames.add(i);
+                            progressInfo.textContent = `Completed ${completedFrames.size}/${totalFrames} frames`;
+                            return {index: i, data: frameData};
+                        })
+                        .catch(error => {
+                            console.error(`Frame ${i + 1} failed:`, error);
+                            progressInfo.textContent = `Error on frame ${i + 1}: ${error.message}. Retrying...`;
+                            throw error;
+                        });
+
+                    batchPromises.push(framePromise);
+                }
+
+                await Promise.all(batchPromises).then(results => {
+                    results.forEach(({index, data}) => {
+                        if (data && data.svg) {
+                            lastFrameSvg = data.svg;
+                            frames[index] = data.svg;
+                            const modifiedSvg = data.svg.replace('<svg', '<svg class="frame"');
+                            container.innerHTML += modifiedSvg;
+                            progressBar.style.width = `${(completedFrames.size / totalFrames) * 100}%`;
+                        }
+                    });
+                });
+
+                await new Promise(resolve => setTimeout(resolve, 2000));
+            }
+
+        } else {
+            for (let i = 0; i < totalFrames; i++) {
+                const framePrompt = {
+                    prompt: `Generate a hyper-realistic SVG animation frame for the prompt: "${prompt}".
+                    Make this frame ${i + 1} of ${totalFrames} in a smooth animation sequence.
+                    
+                    Movement Instructions: ${movementIntensity}
+                    
+                    Quality Context: ${qualityContext}
+                    
+                    Key requirements:
+                    1. Previous frame for reference: ${lastFrameSvg ? lastFrameSvg : 'No previous frame'}
+                    2. Create HYPER-REALISTIC rendering:
+                       - Use detailed gradients and shading
+                       - Include realistic lighting and shadows
+                       - Add fine texture details
+                       - Implement precise perspective and depth
+                    3. ${movement === 'high' ? 'Create dynamic movement while maintaining visual coherence' : 
+                       movement === 'medium' ? 'Create steady, natural movement between frames' : 
+                       'Create subtle, minimal movement between frames'}
+                    4. Keep core visual elements consistent between frames
+                    5. Maintain photo-realistic style throughout
+                    6. Ensure all moving elements follow physically accurate trajectories
+                    7. Use the same element IDs and classes between frames for consistency
+                    8. Please add your model name in top right corner of SVG:
+                       - Use semi-transparent background
+                       - White text
+                       - Size proportional to viewport, make sure the full model name is visible.
+                       - Position at (viewBox width - 100, 30)
+
+                    Create detailed vector graphics with cinematic quality and photorealistic details.
+                    
+                    <typescript-interface>
+                    interface Response {
+                        svg: string;
+                    }
+                    </typescript-interface>
+                    
+                    <example>
+                    {
+                        "svg": "<svg width='100%' height='100%' viewBox='0 0 640 360'><defs><linearGradient id='sky'><stop offset='0%' stop-color='#ff7e47'/><stop offset='100%' stop-color='#ffc847'/></linearGradient></defs><rect width='100%' height='100%' fill='url(#sky)'/></svg>"
+                    }
+                    </example>`,
+                    data: { 
+                        frameNumber: i,
+                        totalFrames: totalFrames,
+                        previousFrame: lastFrameSvg,
+                        movementType: movement,
+                        progress: (i / totalFrames) * 100,
+                        model: selectedModel
+                    }
+                };
+
+                const response = await fetch('/api/ai_completion', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(framePrompt)
+                });
+
+                const frameData = await response.json();
+                lastFrameSvg = frameData.svg;
+                frames.push(frameData.svg);
+
+                const modifiedSvg = frameData.svg.replace('<svg', '<svg class="frame"');
+                container.innerHTML += modifiedSvg;
+
+                progressBar.style.width = `${(i + 1) / totalFrames * 100}%`;
+                progressInfo.textContent = `Generating frames: ${i + 1}/${totalFrames}`;
+            }
+        }
+
+        loading.style.display = 'none';
+        progressInfo.textContent = 'Video generation complete!';
+        showFrame(0);
+
+    } catch (error) {
+        loading.style.display = 'none';
+        progressInfo.textContent = 'Error generating video';
+        console.error('Error:', error);
+    }
+}
+
+async function downloadVideo() {
+    if (frames.length === 0) {
+        alert('Please generate a video first');
+        return;
+    }
+
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = 640;
+    canvas.height = 360;
+
+    const videoBlob = await new Promise(async (resolve) => {
+        const chunks = [];
+        const mediaRecorder = new MediaRecorder(canvas.captureStream(30));
+        
+        mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+        mediaRecorder.onstop = () => resolve(new Blob(chunks, { type: 'video/webm' }));
+        
+        mediaRecorder.start();
+
+        for (let i = 0; i < frames.length; i++) {
+            const img = new Image();
+            const svgBlob = new Blob([frames[i]], { type: 'image/svg+xml' });
+            const url = URL.createObjectURL(svgBlob);
+            
+            await new Promise((resolve) => {
+                img.onload = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    URL.revokeObjectURL(url);
+                    resolve();
+                };
+                img.src = url;
+            });
+            
+            await new Promise(r => setTimeout(r, FRAME_DURATION));
+        }
+
+        mediaRecorder.stop();
+    });
+
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(videoBlob);
+    link.download = 'ai-generated-video.webm';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
+}
+
+function showFrame(frameIndex) {
+    const frames = document.querySelectorAll('.frame');
+    frames.forEach(frame => frame.classList.remove('active'));
+    frames[frameIndex].classList.add('active');
+    const totalFrames = frames.length;
+    document.querySelector('.progress').style.width = `${(frameIndex + 1) / totalFrames * 100}%`;
+}
+
+function playVideo() {
+    if (isPlaying || frames.length === 0) return;
+    isPlaying = true;
+    playInterval = setInterval(() => {
+        currentFrame = (currentFrame + 1) % frames.length;
+        showFrame(currentFrame);
+    }, FRAME_DURATION);
+}
+
+function pauseVideo() {
+    isPlaying = false;
+    clearInterval(playInterval);
+}
+
+function restartVideo() {
+    currentFrame = 0;
+    showFrame(currentFrame);
+    if (isPlaying) {
+        pauseVideo();
+        playVideo();
+    }
+}
+
+async function submitComment() {
+    const commentText = document.getElementById('commentText').value.trim();
+    if (!commentText) return;
+    
+    // Get user info from websim
+    const user = await window.websim.getUser();
+    const commentName = user ? user.username : 'Anonymous';
+    
+    const comment = {
+        name: commentName,
+        text: commentText,
+        date: new Date().toISOString(),
+        id: Date.now()
+    };
+
+    const comments = JSON.parse(localStorage.getItem('videoGeneratorComments') || '[]');
+    comments.unshift(comment);
+    localStorage.setItem('videoGeneratorComments', JSON.stringify(comments));
+
+    document.getElementById('commentText').value = '';
+    displayComments();
+}
+
+function displayComments() {
+    const commentsList = document.getElementById('commentsList');
+    const comments = JSON.parse(localStorage.getItem('videoGeneratorComments') || '[]');
+
+    commentsList.innerHTML = comments.map(comment => {
+        const name = comment && comment.name ? comment.name : 'Anonymous';
+        const date = comment && comment.date ? new Date(comment.date).toLocaleString() : 'Unknown date';
+        const text = comment && comment.text ? comment.text : '';
+
+        return `
+            <div class="comment">
+                <div class="comment-header">
+                    <span>By: ${escapeHtml(name)}</span>
+                    <span>Posted: ${escapeHtml(date)}</span>
+                </div>
+                <div class="comment-text">${escapeHtml(text)}</div>
+            </div>
+        `;
+    }).join('');
+}
+
+function escapeHtml(unsafe) {
+    if (!unsafe) return '';
+    return String(unsafe)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+document.addEventListener('DOMContentLoaded', displayComments);
+</script>
+</body></html>

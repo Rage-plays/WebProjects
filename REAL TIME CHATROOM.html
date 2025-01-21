@@ -1,0 +1,1033 @@
+<html><head><base href="https://unified_real_chatroom.io/"><title>RealTime Chat</title><style>
+:root {
+    --bg-color: #f0f2f5;
+    --container-bg: #ffffff;
+    --header-bg: #4a69bd;
+    --header-text: white;
+    --message-bg: #f1f0f0;
+    --text-color: #1c1e21;
+    --secondary-text: #65676b; /* Darker gray for better visibility */
+    --input-bg: white;
+    --input-border: #ccc;
+    --button-bg: #4a69bd;
+    --button-text: white;
+    --modal-bg: #fefefe;
+}
+.dark-mode {
+    --bg-color: #1c1e21;
+    --container-bg: #242526;
+    --header-bg: #7289da; /* Brighter accent color */
+    --header-text: #ffffff;
+    --message-bg: #2f3136;
+    --text-color: #ffffff;
+    --secondary-text: #b9bbbe; /* Lighter gray for better visibility */
+    --input-bg: #40444b;
+    --input-border: #36393f;
+    --button-bg: #7289da;
+    --button-text: white;
+    --modal-bg: #36393f;
+}
+body, html {
+    font-family: 'Roboto', Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+}
+#chat-container {
+    display: grid;
+    grid-template-columns: 250px 1fr;
+    grid-template-rows: auto 1fr auto;
+    grid-template-areas: 
+        "header header"
+        "sidebar messages"
+        "sidebar input";
+    height: 100%;
+    max-width: 1200px; 
+    margin: 0 auto;
+}
+#chat-header {
+    grid-area: header;
+    display: flex;
+    justify-content: space-between;
+    padding: 20px 30px; /* Increased padding */
+    background: var(--header-bg);
+    color: var(--header-text);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2); /* Add subtle shadow */
+}
+#header-content {
+    flex: 1;
+}
+#main-title {
+    margin: 0;
+    color: var(--header-text);
+    font-size: 28px; /* Larger title */
+    font-weight: 600; /* Slightly bolder */
+    letter-spacing: -0.5px; /* Tighter letter spacing */
+}
+#subtitle {
+    margin: 8px 0 0 0; /* Adjust spacing */
+    color: var(--header-text);
+    opacity: 0.9; /* Slightly more visible */
+    font-size: 15px; /* Slightly larger */
+    font-weight: 400; /* Regular weight */
+}
+#header-buttons {
+    display: flex;
+    gap: 12px; /* Increased gap */
+    align-items: center;
+}
+#header-buttons .btn {
+    padding: 10px 18px;
+    border-radius: 12px; /* Rounder corners */
+    font-weight: 500;
+    transition: all 0.2s ease;
+    border: 1px solid rgba(255,255,255,0.1); /* Subtle border */
+    backdrop-filter: blur(5px);
+}
+#header-buttons .btn:hover {
+    transform: translateY(-1px); /* Subtle lift effect */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+#chat-language {
+    background: rgba(255,255,255,0.1) !important; /* Semi-transparent background */
+    border: 1px solid rgba(255,255,255,0.2) !important;
+}
+#help-btn {
+    background-color: #2ecc71 !important;
+}
+#invite-btn {
+    background: linear-gradient(135deg, #e056fd, #c471ed) !important; /* Gradient background */
+}
+#participants {
+    grid-area: sidebar;
+    border-right: 1px solid var(--input-border);
+    background: var(--container-bg);
+    padding: 20px;
+    overflow-y: auto;
+}
+.participant-header {
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--input-border);
+}
+.participant-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 5px;
+}
+.participant-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    margin-right: 10px;
+    object-fit: cover;
+}
+.participant-name {
+    color: var(--text-color);
+    font-size: 14px;
+}
+#messages {
+    grid-area: messages;
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+}
+.message {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 15px;
+    position: relative;
+}
+.my-message {
+    justify-content: flex-end;
+}
+.their-message {
+    justify-content: flex-start;
+}
+.message-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    margin-right: 10px;
+    object-fit: cover;
+    border: 2px solid; /* Remove static color, will be set by JS */
+}
+.message-content {
+    border-radius: 18px;
+    padding: 10px 15px;
+    max-width: 70%;
+    word-wrap: break-word;
+    background-color: var(--message-bg) !important; /* Override any inline background colors */
+    border-left: 4px solid; /* Remove static color, will be set by JS */
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+.my-message .message-content {
+    color: var(--text-color);
+}
+.their-message .message-content {
+    color: var(--text-color);
+}
+.message-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
+.message-sender {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+.message-time {
+    font-size: 0.8em;
+    color: var(--secondary-text);
+    margin-left: 10px;
+    opacity: 0.9; /* Increase opacity for better visibility */
+}
+.message-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 5px;
+    font-size: 14px;
+}
+.message-action-btn {
+    background: none;
+    border: none;
+    padding: 5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--secondary-text);
+    transition: color 0.2s;
+}
+.message-action-btn:hover {
+    color: var(--text-color);
+}
+.message-reply {
+    background-color: rgba(0,0,0,0.05);
+    padding: 8px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-size: 0.9em;
+    border-left: 3px solid var(--header-bg);
+}
+.message-reply-header {
+    color: var(--secondary-text);
+    font-size: 0.8em;
+    margin-bottom: 4px;
+    opacity: 0.9; /* Increase opacity */
+}
+#input-area {
+    grid-area: input;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    border-top: 1px solid #e0e0e0;
+}
+#reply-indicator {
+    display: none;
+    align-items: center;
+    background: var(--message-bg);
+    padding: 5px 10px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    font-size: 0.9em;
+}
+#reply-indicator span {
+    margin-right: 10px;
+    color: var(--text-color);
+}
+#cancel-reply {
+    background: none;
+    border: none;
+    color: var(--secondary-text);
+    cursor: pointer;
+    padding: 2px 6px;
+}
+#cancel-reply:hover {
+    background: rgba(0,0,0,0.1);
+}
+#input-row {
+    display: flex;
+    width: 100%;
+}
+#message-input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid var(--input-border);
+    border-radius: 20px;
+    outline: none;
+    background-color: var(--input-bg);
+    color: var(--text-color);
+}
+.btn {
+    padding: 10px 20px;
+    margin-left: 10px;
+    border: none;
+    border-radius: 20px;
+    background-color: var(--button-bg);
+    color: var(--button-text);
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+.btn:hover {
+    background-color: #3c5a9a;
+}
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.4);
+}
+.modal-content {
+    background-color: var(--modal-bg);
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 600px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+.close-btn {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+.close-btn:hover,
+.close-btn:focus {
+    color: #000;
+    text-decoration: none;
+    cursor: pointer;
+}
+#typing-status {
+    padding: 5px 20px;
+    font-style: italic;
+    color: var(--secondary-text);
+}
+#welcome-modal .modal-content {
+    text-align: center;
+}
+#welcome-modal h2 {
+    margin-top: 0;
+}
+.translate-btn {
+    background: none;
+    border: none;
+    color: var(--secondary-text);
+    cursor: pointer;
+    padding: 4px 8px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    border-radius: 4px;
+}
+.translate-btn:hover {
+    background: rgba(0,0,0,0.1);
+}
+.translated-text {
+    font-style: italic;
+    color: var(--secondary-text);
+    margin-top: 4px;
+    padding-top: 4px;
+    border-top: 1px solid var(--input-border);
+    opacity: 0.9; /* Increase opacity */
+}
+#chat-language {
+    background: rgba(255,255,255,0.1) !important; /* Semi-transparent background */
+    color: var(--button-text);
+    border: 1px solid rgba(255,255,255,0.2) !important;
+    cursor: pointer;
+}
+#chat-language option {
+    background: var(--modal-bg);
+    color: var(--text-color);
+}
+</style></head><body class="dark-mode">
+<div id="chat-container">
+    <div id="chat-header">
+        <div id="header-content">
+            <h2 id="main-title">Online RealTime Chat</h2>
+            <p id="subtitle">People here are real people talking, there are no bots!</p>
+        </div>
+        <div id="header-buttons">
+            <button id="mode-toggle" class="btn">Light Mode</button>
+            <select id="chat-language" class="btn" style="padding: 8px 15px;">
+                <option value="en">English</option>
+                <option value="es">Spanish</option>
+                <option value="fr">French</option>
+                <option value="de">German</option>
+                <option value="it">Italian</option>
+                <option value="pt">Portuguese</option>
+                <option value="ru">Russian</option>
+                <option value="ja">Japanese</option>
+                <option value="ko">Korean</option>
+                <option value="zh">Chinese</option>
+            </select>
+            <button id="help-btn" class="btn" style="background-color: #2ecc71">How to use</button>
+            <button id="updates-btn" class="btn">Updates</button>
+            <button id="invite-btn" class="btn" style="background: linear-gradient(135deg, #e056fd, #c471ed)">Invite Others</button>
+        </div>
+    </div>
+    <div id="participants">
+        <div class="participant-header">
+            <strong>Participants</strong>
+            <div id="connected-users">
+                <strong>Connected Users:</strong> 
+                <span id="user-count">0</span>
+            </div>
+        </div>
+        <span id="participant-list"></span>
+    </div>
+    <div id="messages" style="background-color: var(--container-bg);"></div>
+    <div id="typing-status"></div>
+    <div id="input-area">
+        <div id="reply-indicator">
+            <span></span>
+            <button id="cancel-reply">×</button>
+        </div>
+        <div id="input-row">
+            <input type="text" id="message-input" placeholder="Type a message...">
+            <button id="send-btn" class="btn">Send</button>
+        </div>
+    </div>
+</div>
+
+<div id="welcome-modal" class="modal">
+    <div class="modal-content">
+        <h2>Welcome to the Chat Room!</h2>
+        <p style="font-size: 14px; line-height: 1.6; color: var(--text-color);">
+            Hello there! This is a real time chat where anyone can join, talk and reply! You may be alone sometime, just wait for someone joining or invite someone if you want test it. 
+           If you are coming from the old online chat, check the updates section to see what's new! ^^ Have a good chat!
+        </p>
+        <button id="welcome-close" class="btn" style="width: 100%; margin-top: 15px;">Got it!</button>
+    </div>
+</div>
+
+<div id="help-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn">×</span>
+        <h2>How to use the chat</h2>
+        <p>Welcome to our Online Chat into websim! Here's how to use it:</p>
+        <ol>
+            <li>You are automatically connected to a shared chat room, the page link is unique for everyone.</li>
+            <li>Type your message in the input box at the bottom of the chat.</li>
+            <li>Click the "Send" button or press Enter to send your message.</li>
+            <li>Your message will appear in the chat along with your username and the time it was sent.</li>
+            <li>You can see the partecipants of the room on the left side of the chat.</li>
+            <li>When someone is typing, you'll see a "Writing..." status.</li>
+            <li>Each user's messages have a unique color to easily distinguish between participants.</li>
+            <li>To invite others, click the "Invite Others" button and share the link.</li>
+            <li>Enjoy chatting with others in real-time!</li>
+        </ol>
+    </div>
+</div>
+
+<div id="updates-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn">×</span>
+        <h2>Updates</h2>
+        <ol>
+            <li>You can talk with anyone who joins the room</li>
+            <li>Added different colors to see who is talking</li>
+            <li>Added the status "Writing..." message when someone is typing something</li>
+            <li>New "Invite Others" feature to easily share the chat room</li>
+            <li>Added the ability to reply a specific message.</li>
+            <li>The chat is not deleting after refresh anymore, but I don't know the limits of the history messages.</li>
+        </ol>
+        <p>More updates coming soon.</p>
+    </div>
+</div>
+
+<div id="invite-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn">×</span>
+        <h2>Invite Others</h2>
+        <p>Share this link with others to invite them to the chat room:</p>
+        <input type="text" id="invite-link" readonly="">
+        <button id="copy-link" class="btn">Copy Link</button>
+        <p>Or use one of these methods:</p>
+        <button id="share-whatsapp" class="btn">Share on WhatsApp</button>
+        <button id="share-telegram" class="btn">Share on Telegram</button>
+        <button id="share-email" class="btn">Share via Email</button>
+    </div>
+</div>
+
+<script>
+const room = new WebsimSocket();
+const messagesContainer = document.getElementById('messages');
+const messageInput = document.getElementById('message-input');
+const sendButton = document.getElementById('send-btn');
+const participantList = document.getElementById('participant-list');
+const helpBtn = document.getElementById('help-btn');
+const updatesBtn = document.getElementById('updates-btn');
+const inviteBtn = document.getElementById('invite-btn');
+const modeToggle = document.getElementById('mode-toggle');
+const helpModal = document.getElementById('help-modal');
+const updatesModal = document.getElementById('updates-modal');
+const inviteModal = document.getElementById('invite-modal');
+const welcomeModal = document.getElementById('welcome-modal');
+const welcomeCloseBtn = document.getElementById('welcome-close');
+const closeBtns = document.querySelectorAll('.close-btn');
+const typingStatus = document.getElementById('typing-status');
+const inviteLink = document.getElementById('invite-link');
+const copyLinkBtn = document.getElementById('copy-link');
+const shareWhatsAppBtn = document.getElementById('share-whatsapp');
+const shareTelegramBtn = document.getElementById('share-telegram');
+const shareEmailBtn = document.getElementById('share-email');
+const chatLanguage = document.getElementById('chat-language');
+
+const MESSAGES_STORE_KEY = 'chatMessages';
+
+const badWordsReplacements = {
+    // Italian replacements
+    'cazzo': 'farfalla',
+    'fanculo': 'arcobaleno',
+    'stronzo': 'unicorno',
+    'merda': 'fiore',
+    'bastardo': 'principino',
+    'puttana': 'principessa',
+    'troia': 'fatina',
+    'scemo': 'simpatico',
+    'idiota': 'saggio',
+    'vaffanculo': 'abbraccio',
+    'coglione': 'dolcetto',
+    'sborra': 'caramella',
+    'rincoglionito': 'sognatore',
+    'succhiamelo': 'sorridi',
+    'cessa': 'stella',
+    
+    // English replacements
+    'fuck': 'butterfly',
+    'shit': 'rainbow',
+    'asshole': 'cupcake',
+    'bitch': 'princess',
+    'cunt': 'flower',
+    'dick': 'lollipop',
+    'bastard': 'sweetheart',
+    'wanker': 'unicorn',
+    'slut': 'fairy',
+    'idiot': 'wise one',
+    'prick': 'cookie',
+    'douche': 'marshmallow',
+    'moron': 'dreamer',
+    'jerk': 'friend',
+    'suck it': 'smile',
+    'damn': 'wow',
+    'ass': 'bunny'
+};
+
+function stringToColor(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    
+    // Generate HSL color with good saturation and lightness for both dark/light modes
+    const hue = Math.abs(hash) % 360;
+    return `hsl(${hue}, 70%, 60%)`; // Consistent saturation and lightness for better visibility
+}
+
+function filterBadWords(text) {
+    let filtered = text.toLowerCase();
+    Object.keys(badWordsReplacements).forEach(badWord => {
+        const regex = new RegExp(`\\b${badWord}\\b`, 'gi');
+        filtered = filtered.replace(regex, badWordsReplacements[badWord]);
+    });
+    return filtered;
+}
+
+function getLanguageCode(languageName) {
+    const languageCodes = {
+        'English': 'en',
+        'Spanish': 'es',
+        'French': 'fr',
+        'German': 'de',
+        'Italian': 'it',
+        'Portuguese': 'pt',
+        'Russian': 'ru',
+        'Japanese': 'ja',
+        'Korean': 'ko',
+        'Chinese': 'zh'
+    };
+    return languageCodes[languageName] || 'en';
+}
+
+const MAX_STORED_MESSAGES = 50; // Maximum number of messages to store
+
+async function loadStoredMessages() {
+    const storedMessages = await room.store.get(MESSAGES_STORE_KEY) || [];
+    // Only load the last MAX_STORED_MESSAGES messages
+    const recentMessages = storedMessages.slice(-MAX_STORED_MESSAGES);
+    recentMessages.forEach(msg => {
+        addMessageToChat(
+            msg.clientId,
+            msg.username,
+            msg.message,
+            msg.time,
+            msg.avatarUrl,
+            msg.replyTo
+        );
+    });
+}
+
+let typingTimeout;
+const typingUsers = new Set();
+
+function updateTypingStatus() {
+    if (typingUsers.size > 0) {
+        const users = Array.from(typingUsers).join(', ');
+        typingStatus.textContent = `${users} ${typingUsers.size > 1 ? 'are' : 'is'} writing...`;
+    } else {
+        typingStatus.textContent = '';
+    }
+}
+
+function updateParticipantList() {
+    const participants = Object.values(room.party.peers);
+    document.getElementById('user-count').textContent = participants.length;
+
+    participantList.innerHTML = participants.map(peer => `
+        <div class="participant-item">
+            <img class="participant-avatar" src="${peer.avatarUrl}" alt="${peer.username}'s avatar">
+            <span class="participant-name">${peer.username}</span>
+        </div>
+    `).join('');
+}
+
+room.onPeersChanged = updateParticipantList;
+
+function handleReply(messageId) {
+    const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+    const username = messageElement.querySelector('.message-sender').textContent;
+    const message = messageElement.querySelector('.message-text').textContent;
+    
+    messageInput.dataset.replyTo = JSON.stringify({
+        username: username,
+        message: message
+    });
+    
+    const replyIndicator = document.getElementById('reply-indicator');
+    replyIndicator.querySelector('span').textContent = `Replying to ${username}`;
+    replyIndicator.style.display = 'flex';
+    messageInput.focus();
+}
+
+function cancelReply() {
+    delete messageInput.dataset.replyTo;
+    document.getElementById('reply-indicator').style.display = 'none';
+    messageInput.placeholder = "Type a message...";
+}
+
+function addMessageToChat(clientId, username, message, time, avatarUrl, replyTo = null) {
+    const messageElement = document.createElement('div');
+    messageElement.classList.add('message', clientId === room.party.client.id ? 'my-message' : 'their-message');
+    messageElement.dataset.messageId = Date.now().toString();
+
+    const iconElement = document.createElement('img');
+    iconElement.src = avatarUrl;
+    iconElement.classList.add('message-icon');
+    // Add border color to avatar
+    iconElement.style.borderColor = stringToColor(clientId);
+    messageElement.appendChild(iconElement);
+
+    const contentElement = document.createElement('div');
+    contentElement.classList.add('message-content');
+    // Add border color to message
+    contentElement.style.borderLeftColor = stringToColor(clientId);
+    
+    if (replyTo) {
+        const replyElement = document.createElement('div');
+        replyElement.classList.add('message-reply');
+        replyElement.innerHTML = `
+            <div class="message-reply-header">Replying to ${replyTo.username}</div>
+            <div class="reply-message">${replyTo.message}</div>
+        `;
+        contentElement.appendChild(replyElement);
+    }
+
+    const headerElement = document.createElement('div');
+    headerElement.classList.add('message-header');
+    headerElement.innerHTML = `
+        <span class="message-sender">${username}</span>
+        <span class="message-time">${time}</span>
+    `;
+
+    const textElement = document.createElement('div');
+    textElement.classList.add('message-text');
+    textElement.textContent = message;
+
+    const actionsElement = document.createElement('div');
+    actionsElement.classList.add('message-actions');
+    actionsElement.innerHTML = `
+        <button class="message-action-btn reply-btn" onclick="handleReply('${messageElement.dataset.messageId}')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+            </svg>
+            Reply
+        </button>
+        <button class="message-action-btn translate-btn" onclick="translateMessage(this, '${messageElement.dataset.messageId}')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2c5.523 0 10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2z"/>
+                <path d="M2 12h20"/>
+            </svg>
+            Translate
+        </button>
+    `;
+
+    contentElement.appendChild(headerElement);
+    contentElement.appendChild(textElement);
+    contentElement.appendChild(actionsElement);
+    messageElement.appendChild(contentElement);
+    messagesContainer.appendChild(messageElement);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+async function translateMessage(button, messageId) {
+    const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+    const textElement = messageElement.querySelector('.message-text');
+    const originalText = textElement.textContent;
+
+    const existingTranslation = messageElement.querySelector('.translated-text');
+    if (existingTranslation) {
+        existingTranslation.remove();
+        button.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2c5.523 0 10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2z"/>
+                <path d="M2 12h20"/>
+            </svg>
+            Translate
+        `;
+        return;
+    }
+
+    const langSelect = document.createElement('select');
+    langSelect.innerHTML = `
+        <option value="en">English</option>
+        <option value="es">Spanish</option>
+        <option value="fr">French</option>
+        <option value="de">German</option>
+        <option value="it">Italian</option>
+        <option value="pt">Portuguese</option>
+        <option value="ru">Russian</option>
+        <option value="ja">Japanese</option>
+        <option value="ko">Korean</option>
+        <option value="zh">Chinese</option>
+    `;
+    
+    const langDialog = document.createElement('div');
+    langDialog.style.cssText = `
+        position: absolute;
+        background: var(--container-bg);
+        border: 1px solid var(--input-border);
+        padding: 10px;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        z-index: 1000;
+    `;
+    
+    const translateBtn = document.createElement('button');
+    translateBtn.textContent = 'Translate';
+    translateBtn.className = 'btn';
+    translateBtn.style.marginLeft = '10px';
+    
+    langDialog.appendChild(langSelect);
+    langDialog.appendChild(translateBtn);
+    
+    button.parentElement.appendChild(langDialog);
+
+    translateBtn.onclick = async () => {
+        const targetLang = langSelect.value;
+        button.textContent = 'Translating...';
+        
+        try {
+            const response = await fetch('/api/ai_completion', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({
+                    prompt: `Translate the following text to ${langSelect.options[langSelect.selectedIndex].text}:
+                    "${originalText}"
+                    
+                    <Response-Typescript-Interface>
+                    interface Response {
+                        translation: string;
+                    }
+                    </Response-Typescript-Interface>
+                    
+                    <Response-Example>
+                    {
+                        "translation": "Bonjour le monde"
+                    }
+                    </Response-Example>`,
+                    data: originalText
+                }),
+            });
+            
+            const data = await response.json();
+            
+            if (data.translation) {
+                const translatedElement = document.createElement('div');
+                translatedElement.classList.add('translated-text');
+                translatedElement.textContent = data.translation;
+                textElement.appendChild(translatedElement);
+                button.textContent = 'Hide Translation';
+            } else {
+                throw new Error('Translation failed');
+            }
+        } catch (error) {
+            console.error('Translation failed:', error);
+            button.textContent = 'Translate';
+            alert('Translation failed. Please try again later.');
+        }
+        
+        langDialog.remove();
+    };
+}
+
+async function translateInterface(targetLang) {
+    const elementsToTranslate = {
+        'main-title': document.getElementById('main-title').textContent,
+        'subtitle': document.getElementById('subtitle').textContent,
+        'mode-toggle': document.getElementById('mode-toggle').textContent,
+        'help-btn': document.getElementById('help-btn').textContent,
+        'updates-btn': document.getElementById('updates-btn').textContent,
+        'invite-btn': document.getElementById('invite-btn').textContent,
+        'message-input': messageInput.placeholder,
+    };
+
+    for (const [id, text] of Object.entries(elementsToTranslate)) {
+        try {
+            const response = await fetch('/api/ai_completion', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({
+                    prompt: `Translate the following text to ${chatLanguage.options[chatLanguage.selectedIndex].text}:
+                    "${text}"
+                    
+                    <Response-Typescript-Interface>
+                    interface Response {
+                        translation: string;
+                    }
+                    </Response-Typescript-Interface>
+                    
+                    <Response-Example>
+                    {
+                        "translation": "Texto traducido"
+                    }
+                    </Response-Example>`,
+                    data: text
+                }),
+            });
+            
+            const data = await response.json();
+            
+            if (data.translation) {
+                if (id === 'message-input') {
+                    messageInput.placeholder = data.translation;
+                } else {
+                    document.getElementById(id).textContent = data.translation;
+                }
+            }
+        } catch (error) {
+            console.error('Translation failed for element:', id, error);
+        }
+    }
+}
+
+function sendMessage() {
+    let message = messageInput.value.trim();
+    if (message) {
+        message = filterBadWords(message);
+        
+        const time = new Date().toLocaleTimeString();
+        const replyToData = messageInput.dataset.replyTo ? JSON.parse(messageInput.dataset.replyTo) : null;
+        const messageId = Date.now().toString();
+        
+        const messageData = {
+            type: 'chat',
+            messageId,
+            message: message,
+            time: time,
+            replyTo: replyToData,
+            clientId: room.party.client.id,
+            username: room.party.client.username,
+            avatarUrl: room.party.client.avatarUrl
+        };
+
+        room.store.update({
+            id: MESSAGES_STORE_KEY,
+            dependencies: { messageData, MAX_STORED_MESSAGES },
+            updateFunction: (messages = []) => {
+                const updatedMessages = [...messages, messageData];
+                // Keep only the most recent messages
+                return updatedMessages.slice(-MAX_STORED_MESSAGES);
+            }
+        });
+
+        room.send(messageData);
+        
+        messageInput.value = '';
+        typingUsers.delete(room.party.client.username);
+        updateTypingStatus();
+        cancelReply();
+    }
+}
+
+messageInput.addEventListener('input', () => {
+    // Send typing status
+    room.send({
+        type: 'typing',
+        typing: true,
+        username: room.party.client.username
+    });
+    
+    // Clear existing timeout
+    clearTimeout(typingTimeout);
+    
+    // Set new timeout to clear typing status after 2 seconds
+    typingTimeout = setTimeout(() => {
+        room.send({
+            type: 'typing',
+            typing: false,
+            username: room.party.client.username
+        });
+    }, 2000);
+});
+
+sendButton.addEventListener('click', sendMessage);
+messageInput.addEventListener('keypress', (event) => {
+    if (event.key === 'Enter') {
+        sendMessage();
+    }
+});
+
+chatLanguage.addEventListener('change', function() {
+    translateInterface(this.value);
+});
+
+room.onmessage = (event) => {
+    const data = event.data;
+    switch(data.type) {
+        case 'chat':
+            const avatarUrl = room.party.peers[data.clientId]?.avatarUrl || data.avatarUrl || 'https://www.gravatar.com/avatar/?d=mp';
+            
+            addMessageToChat(
+                data.clientId, 
+                data.username, 
+                data.message, 
+                data.time, 
+                avatarUrl,
+                data.replyTo
+            );
+            typingUsers.delete(data.username);
+            updateTypingStatus();
+            break;
+        case 'typing':
+            if (data.typing) {
+                typingUsers.add(data.username);
+            } else {
+                typingUsers.delete(data.username);
+            }
+            updateTypingStatus();
+            break;
+    }
+};
+
+helpBtn.onclick = function() {
+    helpModal.style.display = "block";
+}
+
+updatesBtn.onclick = function() {
+    updatesModal.style.display = "block";
+}
+
+inviteBtn.onclick = function() {
+    inviteModal.style.display = "block";
+    inviteLink.value = window.location.href;
+}
+
+modeToggle.addEventListener('click', () => {
+    document.body.classList.toggle('dark-mode');
+    
+    if (document.body.classList.contains('dark-mode')) {
+        modeToggle.textContent = 'Light Mode';
+    } else {
+        modeToggle.textContent = 'Dark Mode';
+    }
+});
+
+closeBtns.forEach(btn => {
+    btn.onclick = function() {
+        helpModal.style.display = "none";
+        updatesModal.style.display = "none";
+        inviteModal.style.display = "none";
+    }
+});
+
+window.onclick = function(event) {
+    if (event.target == helpModal) {
+        helpModal.style.display = "none";
+    }
+    if (event.target == updatesModal) {
+        updatesModal.style.display = "none";
+    }
+    if (event.target == inviteModal) {
+        inviteModal.style.display = "none";
+    }
+}
+
+copyLinkBtn.onclick = function() {
+    inviteLink.select();
+    document.execCommand("copy");
+    alert("Link copied to clipboard!");
+}
+
+shareWhatsAppBtn.onclick = function(e) {
+    e.preventDefault();
+    const text = encodeURIComponent("Join me in this chat room: " + window.location.href);
+    window.open(`https://wa.me/?text=${text}`, '_blank', 'noopener,noreferrer');
+}
+
+shareTelegramBtn.onclick = function(e) {
+    e.preventDefault();
+    const text = encodeURIComponent("Join me in this chat room: " + window.location.href);
+    window.open(`https://t.me/share/url?url=${text}`, '_blank', 'noopener,noreferrer');
+}
+
+shareEmailBtn.onclick = function(e) {
+    e.preventDefault();
+    const subject = encodeURIComponent("Join me in this chat room");
+    const body = encodeURIComponent("Hey, join me in this chat room: " + window.location.href);
+    window.open(`mailto:?subject=${subject}&body=${body}`, '_blank', 'noopener,noreferrer');
+}
+
+updateParticipantList();
+
+loadStoredMessages();
+
+welcomeModal.style.display = "block";
+
+welcomeCloseBtn.onclick = function() {
+    welcomeModal.style.display = "none";
+}
+
+document.getElementById('cancel-reply').addEventListener('click', cancelReply);
+</script>
+</body></html>

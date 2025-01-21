@@ -1,0 +1,1921 @@
+<html><head><base href="." /><title>Glungaria: The Only Game You Will Ever Need Trust Me</title><style>
+@font-face {
+    font-family: 'Jacquard 12';
+    src: url('https://fonts.googleapis.com/css2?family=Jacquard+12&display=swap');
+}
+
+body {
+    margin: 0;
+    overflow: hidden;
+    background: #87CEEB;
+    font-family: 'Jacquard 12', regular;
+}
+
+.explosion {
+    position: absolute;
+    width: 300px;
+    height: 300px;
+    background-image: url('https://file.garden/ZuVWBvHqjV5ssvlO/boom.gif');
+    background-size: contain;
+    background-repeat: no-repeat;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.health-bar {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    gap: 5px;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.heart {
+    width: 36px; 
+    height: 36px;
+    background-image: url('https://file.garden/ZuVWBvHqjV5ssvlO/heart.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    transition: opacity 0.3s;
+}
+
+.heart.empty {
+    opacity: 0.3;
+}
+
+.game-container, .title-screen {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+}
+
+.title-screen {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.logo {
+    width: 800px;
+    margin-bottom: 30px;
+    animation: float 3s ease-in-out infinite;
+    filter: drop-shadow(0 10px 15px rgba(0,0,0,0.3));
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0) rotate(-5deg); }
+    50% { transform: translateY(-30px) rotate(5deg); }
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(-50%); }
+    10% { transform: translate(calc(-50% - 2px), -2px); }
+    20% { transform: translate(calc(-50% + 2px), 2px); }
+    30% { transform: translate(calc(-50% - 2px), 2px); }
+    40% { transform: translate(calc(-50% + 2px), -2px); }
+    50% { transform: translate(calc(-50% - 2px), 0); }
+    60% { transform: translate(calc(-50% + 2px), 2px); }
+    70% { transform: translate(calc(-50% - 2px), -2px); }
+    80% { transform: translate(calc(-50% + 2px), 0); }
+    90% { transform: translate(calc(-50% - 2px), 2px); }
+}
+
+@keyframes shakeFlipped {
+    0%, 100% { transform: translate(0, 0) scaleX(-1); }
+    10% { transform: translate(-2px, -2px) scaleX(-1); }
+    20% { transform: translate(2px, 2px) scaleX(-1); }
+    30% { transform: translate(-2px, 2px) scaleX(-1); }
+    40% { transform: translate(2px, -2px) scaleX(-1); }
+    50% { transform: translate(-2px, 0) scaleX(-1); }
+    60% { transform: translate(2px, 2px) scaleX(-1); }
+    70% { transform: translate(-2px, -2px) scaleX(-1); }
+    80% { transform: translate(2px, 0) scaleX(-1); }
+    90% { transform: translate(-2px, 2px) scaleX(-1); }
+}
+
+@keyframes spinRight {
+    from { transform: rotate(0deg) scaleX(1); }
+    to { transform: rotate(360deg) scaleX(1); }
+}
+
+@keyframes spinLeft {
+    from { transform: rotate(0deg) scaleX(-1); }
+    to { transform: rotate(-360deg) scaleX(-1); }
+}
+
+.player.spinning-right {
+    animation: spinRight 0.6s linear infinite;
+}
+
+.player.spinning-left {
+    animation: spinLeft 0.6s linear infinite;
+}
+
+.player:not(.spinning-right):not(.spinning-left) {
+    animation: none;
+}
+
+.game-over-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(255, 0, 0, 0.3);
+    z-index: 1000;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+.game-over-message {
+    color: #f39999;
+    font-size: 48px;
+    text-shadow: 
+        -2px -2px 0 #000,  
+        2px -2px 0 #000,
+        -2px 2px 0 #000,
+        2px 2px 0 #000;
+}
+
+.death-note {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    color: #ffffff;
+    font-size: 16px;
+    opacity: 0.8;
+    text-shadow: 
+        -1px -1px 0 #000,  
+        1px -1px 0 #000,
+        -1px 1px 0 #000,
+        1px 1px 0 #000;
+}
+
+.player.dead {
+    transform: scaleY(0.2) !important;
+    transition: transform 0.5s ease-out;
+    filter: brightness(0.7);
+}
+
+.start-button {
+    padding: 15px 30px;
+    font-size: 24px;
+    background: transparent;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: transform 0.2s;
+    z-index: 10;
+    font-family: 'Jacquard 12', cursive;
+    text-shadow: 
+        -2px -2px 0 #000,  
+        2px -2px 0 #000,
+        -2px 2px 0 #000,
+        2px 2px 0 #000;
+    letter-spacing: 2px;
+}
+
+.start-button:hover {
+    transform: scale(1.1);
+}
+
+.loading {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.player {
+    width: 40px;
+    height: 80px;
+    position: absolute;
+    background: url('/a/9c60451c-40ee-4be7-9bd6-7796161cb57c');
+    background-size: 100%;
+    background-repeat: no-repeat;
+    transition: transform 0.1s;
+}
+
+.ground {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 120px; 
+    background: url('https://file.garden/ZuVWBvHqjV5ssvlO/dirt.png');
+    background-repeat: repeat;
+    background-size: 48px 48px; 
+    image-rendering: pixelated;
+}
+
+.grass {
+    position: absolute;
+    bottom: 120px; 
+    width: 100%;
+    height: 48px; 
+    background: url('https://file.garden/ZuVWBvHqjV5ssvlO/grass.png');
+    background-repeat: repeat-x;
+    background-size: 48px 48px; 
+    image-rendering: pixelated;
+}
+
+.floating-item {
+    position: absolute;
+    width: 300px;
+    height: 300px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    animation: floatItem 2s ease-in-out infinite;
+}
+
+@keyframes floatItem {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+.game-container {
+    display: none;
+}
+
+.cave-area {
+    display: none;
+    width: 100vw;
+    height: 100vh;
+    position: absolute;
+    top: 0;
+    left: 0;
+    background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('https://file.garden/ZuVWBvHqjV5ssvlO/stone.png');
+    background-repeat: repeat;
+    background-size: 48px 48px;
+    image-rendering: pixelated;
+}
+
+.cave-platform {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 120px;
+    background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://file.garden/ZuVWBvHqjV5ssvlO/stone.png');
+    background-repeat: repeat;
+    background-size: 48px 48px;
+    image-rendering: pixelated;
+}
+
+.cave-walls {
+    position: absolute;
+    width: 200px;
+    height: 100%;
+    background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://file.garden/ZuVWBvHqjV5ssvlO/stone.png');
+    background-repeat: repeat;
+    background-size: 48px 48px;
+    image-rendering: pixelated;
+}
+
+.cave-wall-left {
+    left: 0;
+}
+
+.cave-wall-right {
+    right: 0;
+}
+
+.cat-enemy {
+    width: 128px;
+    height: 128px;
+    position: absolute;
+    background: url('https://file.garden/ZuVWBvHqjV5ssvlO/glungus.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    transform-origin: center;
+    z-index: 2;
+}
+
+.cat-attack {
+    position: absolute;
+    width: 128px; 
+    height: 128px;
+    background: url('https://file.garden/ZuVWBvHqjV5ssvlO/paw.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    pointer-events: none;
+    transform-origin: left center;
+    z-index: 1;
+}
+
+.cat-enemy.shaking {
+    animation: shake 0.5s;
+}
+
+.cat-enemy.shaking.flipped {
+    animation: shakeFlipped 0.5s;
+}
+
+.cat-health-container.shaking {
+    animation: shake 0.5s;
+}
+
+.cat-health-container {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 300px;
+    height: 40px;
+    z-index: 1000;
+}
+
+.cat-health-label {
+    color: white;
+    font-family: "Times New Roman", Times, serif;
+    font-size: 20px;
+    margin-bottom: 21px;
+    text-align: center;
+    text-shadow: 2px 2px 2px black;
+}
+
+.cat-health-bar {
+    width: 100%;
+    height: 31px;
+    background: linear-gradient(to bottom, #ff6666, #ff3333);
+    position: relative;
+    transition: width 0.3s;
+}
+
+.cat-health-border {
+    position: absolute;
+    top: 41px;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: url('https://file.garden/ZuVWBvHqjV5ssvlO/healthbar.png');
+    background-size: 100% 100%;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.cat-soul {
+    position: absolute;
+    width: 300px;
+    height: 300px;
+    background-image: url('https://file.garden/ZuVWBvHqjV5ssvlO/angelglungus.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    opacity: 0;
+    z-index: 1001;
+    pointer-events: none;
+    transition: opacity 2s, transform 4s;
+}
+
+@keyframes floatSoul {
+    0% { transform: translateY(0); opacity: 0; }
+    20% { opacity: 0.7; }
+    100% { transform: translateY(-300px); opacity: 0; }
+}
+
+.victory-star {
+    position: absolute;
+    width: 128px;
+    height: 128px;
+    background-image: url('https://file.garden/ZuVWBvHqjV5ssvlO/star.gif');
+    background-size: contain;
+    background-repeat: no-repeat;
+    z-index: 1002;
+    animation: starFloat 4s forwards;
+    pointer-events: none;
+}
+
+@keyframes starFloat {
+    0% { transform: translateY(-100vh); }
+    70% { transform: translateY(40vh); }
+    85% { transform: translateY(35vh); }
+    100% { transform: translateY(40vh); }
+}
+
+.axe {
+    position: absolute;
+    width: 48px;
+    height: 48px;
+    background-image: url('https://file.garden/ZuVWBvHqjV5ssvlO/axe.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    pointer-events: none;
+    transform-origin: center;
+    z-index: 1;
+}
+
+.knife {
+    position: absolute;
+    width: 64px;
+    height: 64px;
+    background-image: url('https://file.garden/ZuVWBvHqjV5ssvlO/knife.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    transform-origin: center;
+    pointer-events: none;
+    z-index: 1;
+}
+
+@keyframes swingAxe {
+    0% { transform: rotate(-60deg); }
+    50% { transform: rotate(180deg); }
+    100% { transform: rotate(-60deg); }
+}
+
+@keyframes swingAxeReverse {
+    0% { transform: rotate(60deg) scaleX(-1); }
+    50% { transform: rotate(-180deg) scaleX(-1); }
+    100% { transform: rotate(60deg) scaleX(-1); }
+}
+
+.speech-bubble {
+    position: absolute;
+    width: 256px;
+    height: 128px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    z-index: 1002;
+}
+
+.laser-source {
+    width: 64px;
+    height: 64px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    z-index: 1;
+}
+
+.laser-beam {
+    height: 4px;
+    background: linear-gradient(
+        to right,
+        rgba(255,0,0,0.5),
+        rgba(255,0,0,1)
+    );
+    box-shadow: 
+        0 0 5px red,
+        0 0 10px red;
+    z-index: 1;
+}
+
+.secret-phase {
+    background: linear-gradient(rgba(0, 0, 200, 0.3), rgba(0, 0, 200, 0.3)), 
+                url('https://file.garden/ZuVWBvHqjV5ssvlO/stone.png');
+    transform: scale(1.2);
+    transition: all 1s;
+}
+
+.blue-attack {
+    filter: hue-rotate(180deg) brightness(1.5);
+}
+
+.minion {
+    width: 64px;
+    height: 64px;
+    position: absolute;
+    background-image: url('/a/90a4f1b9-5586-41b0-9f7a-80e498fb3e5f');
+    background-size: contain;
+    background-repeat: no-repeat;
+    animation: floatMinion 2s infinite;
+}
+
+@keyframes floatMinion {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+.health-powerup {
+    width: 32px;
+    height: 32px;
+    position: absolute;
+    background-image: url('https://file.garden/ZuVWBvHqjV5ssvlO/heart.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    filter: hue-rotate(340deg) brightness(1.2);
+}
+
+.yummers-text {
+    position: absolute;
+    color: #ff4444;
+    font-size: 24px;
+    font-weight: bold;
+    pointer-events: none;
+    text-shadow: 2px 2px 0px black;
+    z-index: 1000;
+    animation: float-away 1s forwards;
+}
+
+@keyframes float-away {
+    0% { transform: translateY(0); opacity: 1; }
+    100% { transform: translateY(-50px); opacity: 0; }
+}
+
+.glungi-bullet {
+    width: 32px;
+    height: 32px;
+    position: absolute;
+    background-image: url('/a/90a4f1b9-5586-41b0-9f7a-80e498fb3e5f');
+    background-size: contain;
+    background-repeat: no-repeat;
+    filter: hue-rotate(180deg) brightness(1.5);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.ultra-glungi {
+    background-image: url('/a/ca7729bd-82a8-49f2-b781-eb634f7b6712') !important;
+    filter: hue-rotate(180deg) brightness(1.5) !important;
+}
+
+.blue-flame {
+    position: absolute;
+    pointer-events: none;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at center, rgba(0,100,255,0.2) 0%, transparent 70%);
+    animation: flameFlicker 0.5s infinite alternate;
+}
+
+@keyframes flameFlicker {
+    0% { opacity: 0.7; }
+    100% { opacity: 1; }
+}
+
+.ultra-bullet {
+    width: 48px;
+    height: 48px;
+    position: absolute;
+    background-image: url('/a/ca7729bd-82a8-49f2-b781-eb634f7b6712');
+    background-size: contain;
+    background-repeat: no-repeat;
+    filter: hue-rotate(180deg) brightness(2);
+    pointer-events: none;
+    z-index: 1;
+}
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Jacquard+12&display=swap" rel="stylesheet"></head><body>
+<div class="title-screen" id="titleScreen">
+    <img src="/a/799d8775-6166-49c8-bfb6-dcd9e8328b5d" alt="Glungaria game logo" width="800" height="400" class="logo">
+    <button class="start-button" id="startButton">Start Game</button>
+    <div class="ground"></div>
+    <div id="titleGrass" class="grass"></div>
+</div>
+
+<div class="health-bar" id="healthBar">
+    <div class="heart"></div>
+    <div class="heart"></div>
+    <div class="heart"></div>
+    <div class="heart"></div>
+    <div class="heart"></div>
+    <div class="heart"></div>
+    <div class="heart"></div>
+    <div class="heart"></div>
+    <div class="heart"></div>
+    <div class="heart"></div>
+    <div class="heart"></div>
+    <div class="heart"></div>
+    <div class="heart"></div>
+    <div class="heart"></div>
+    <div class="heart"></div>
+    <div class="heart"></div>
+    <div class="heart"></div>
+    <div class="heart"></div>
+    <div class="heart"></div>
+    <div class="heart"></div>
+</div>
+
+<div class="game-container" id="gameContainer">
+    <div id="player" class="player"></div>
+    <div class="ground"></div>
+    <div id="gameGrass" class="grass"></div>
+</div>
+
+<div class="game-over-overlay" id="gameOverOverlay">
+    <div class="game-over-message">You were slain.</div>
+    <div class="death-note">Player shattered into pieces.</div>
+</div>
+
+<div class="cave-area" id="caveArea">
+    <div id="cavePlayer" class="player"></div>
+    <div class="cave-platform"></div>
+    <div class="cave-walls cave-wall-left"></div>
+    <div class="cave-walls cave-wall-right"></div>
+    <div id="catEnemy" class="cat-enemy"></div>
+    <div class="cat-health-container">
+        <div class="cat-health-label">GLUNGI HEALTH</div>
+        <div class="cat-health-wrapper">
+            <div class="cat-health-bar" id="catHealthBar"></div>
+            <div class="cat-health-border"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+let menuMusic = new Audio('https://file.garden/ZuVWBvHqjV5ssvlO/simpson%20gamer%20(mp3cut.net).wav');
+let gameMusic = new Audio('https://file.garden/ZuVWBvHqjV5ssvlO/the%20terrain.wav');
+const caveMusic = new Audio('https://file.garden/ZuVWBvHqjV5ssvlO/glungus%20battle.wav');
+const starSound = new Audio('https://file.garden/ZuVWBvHqjV5ssvlO/starappear.mp3');
+caveMusic.preservesPitch = false; 
+let deathSound = new Audio('https://file.garden/ZuVWBvHqjV5ssvlO/loud-glass-shatter.mp3');
+let catDeathSound = new Audio('https://file.garden/ZuVWBvHqjV5ssvlO/glungus%20death.mp3');
+
+menuMusic.loop = true;
+gameMusic.loop = true;
+caveMusic.loop = true;
+
+window.addEventListener('click', function() {
+    menuMusic.play().catch(e => console.log('Audio playback failed:', e));
+}, { once: true });
+
+const powerUps = {
+    hearts: []
+};
+
+function spawnHeartPowerUp() {
+    const heart = {
+        x: Math.random() * (window.innerWidth - 32),
+        y: 0,
+        velocityX: (Math.random() - 0.5) * 4,
+        velocityY: 0,
+        element: document.createElement('div')
+    };
+    
+    heart.element.className = 'health-powerup';
+    heart.element.style.left = `${heart.x}px`;
+    heart.element.style.top = `${heart.y}px`;
+    
+    if (cat.isSecondPhase) {
+        heart.element.style.filter = 'hue-rotate(180deg) brightness(1.5)';
+    }
+    
+    const container = player.inCave ? document.getElementById('caveArea') : document.getElementById('gameContainer');
+    container.appendChild(heart.element);
+    
+    powerUps.hearts.push(heart);
+    
+    setTimeout(() => {
+        const index = powerUps.hearts.indexOf(heart);
+        if (index > -1) {
+            heart.element.remove();
+            powerUps.hearts.splice(index, 1);
+        }
+    }, 10000);
+}
+
+function updatePowerUps() {
+    for (let i = powerUps.hearts.length - 1; i >= 0; i--) {
+        const heart = powerUps.hearts[i];
+        
+        heart.velocityY += 0.2;
+        heart.y += heart.velocityY;
+        heart.x += heart.velocityX;
+        
+        if (heart.x <= 0 || heart.x >= window.innerWidth - 32) {
+            heart.velocityX *= -0.8;
+            heart.x = Math.max(0, Math.min(heart.x, window.innerWidth - 32));
+        }
+        
+        if (heart.y >= window.innerHeight - 168) {
+            heart.y = window.innerHeight - 168;
+            heart.velocityY *= -0.6;
+            heart.velocityX *= 0.8;
+        }
+        
+        if (player.x < heart.x + 32 &&
+            player.x + player.width > heart.x &&
+            player.y < heart.y + 32 &&
+            player.y + player.height > heart.y) {
+            
+            if (player.health < 20) {
+                updateHealth(4);
+                
+                const yummers = document.createElement('div');
+                yummers.className = 'yummers-text';
+                yummers.textContent = 'yummers';
+                yummers.style.left = `${player.x}px`;
+                yummers.style.top = `${player.y - 30}px`;
+                document.body.appendChild(yummers);
+                
+                setTimeout(() => yummers.remove(), 1000);
+            }
+            
+            heart.element.remove();
+            powerUps.hearts.splice(i, 1);
+            continue;
+        }
+        
+        heart.element.style.left = `${heart.x}px`;
+        heart.element.style.top = `${heart.y}px`;
+    }
+}
+
+function generateGrass(elementId) {
+    const grassContainer = document.getElementById(elementId);
+    const numberOfBlades = 200;
+
+    for (let i = 0; i < numberOfBlades; i++) {
+        const blade = document.createElement('div');
+        blade.className = 'grass-blade';
+        blade.style.left = `${Math.random() * 100}%`;
+        blade.style.height = `${10 + Math.random() * 20}px`;
+        blade.style.animationDelay = `${Math.random() * 2}s`;
+        grassContainer.appendChild(blade);
+    }
+}
+
+generateGrass('titleGrass');
+
+document.getElementById('startButton').addEventListener('click', () => {
+    const startButton = document.getElementById('startButton');
+    startButton.textContent = 'Loading...';
+    startButton.classList.add('loading');
+    startButton.disabled = true;
+    
+    setTimeout(() => {
+        startGame();
+    }, 2000);
+});
+
+function startGame() {
+    menuMusic.pause();
+    menuMusic.currentTime = 0;
+    gameMusic.play().catch(e => console.log('Audio playback failed:', e));
+    document.getElementById('titleScreen').style.display = 'none';
+    document.getElementById('healthBar').style.display = 'flex'; 
+    document.getElementById('gameContainer').style.display = 'block';
+    
+    player.health = 20;
+    updateHealth(0);
+    
+    initGame();
+}
+
+function updateHealth(amount) {
+    if (player.dead || player.invulnerable) return;
+    
+    const healthBar = document.getElementById('healthBar');
+    const hearts = healthBar.getElementsByClassName('heart');
+    
+    player.health = Math.max(0, Math.min(20, player.health + amount));
+    
+    for (let i = 0; i < hearts.length; i++) {
+        if (i < player.health) {
+            hearts[i].classList.remove('empty');
+        } else {
+            hearts[i].classList.add('empty');
+        }
+    }
+    
+    if (amount < 0 && player.health > 0) {
+        player.invulnerable = true;
+        setTimeout(() => {
+            player.invulnerable = false;
+        }, 1000);
+    }
+    
+    if (player.health <= 0 && !player.dead) {
+        player.dead = true;
+        deathSound.play().catch(e => console.log('Audio playback failed:', e));
+        document.getElementById('gameOverOverlay').style.display = 'flex';
+        const playerElement = document.getElementById(player.inCave ? 'cavePlayer' : 'player');
+        playerElement.classList.add('dead');
+    }
+}
+
+function damagePlayer() {
+    if (!player.invulnerable && !player.dead) {
+        updateHealth(-1);
+    }
+}
+const player = {
+    x: 300,
+    y: 300,
+    width: 40,
+    height: 75,
+    velocityY: 0,
+    speed: 5,
+    jumping: false,
+    inCave: false,
+    facingRight: true,
+    health: 20,
+    invulnerable: false,
+    dead: false,
+    regenTimer: 0,
+    regenInterval: 180, 
+    phase2RegenInterval: 90,
+    swingingAxe: false,
+    axeCooldown: 0
+};
+
+const gravity = 0.5;
+const jumpForce = -15;
+
+const platforms = [
+    {
+        x: 0,
+        width: window.innerWidth * 0.8,
+        grassY: window.innerHeight - 168,
+        groundY: window.innerHeight - 120,
+    },
+    {
+        x: window.innerWidth * 0.9,
+        width: window.innerWidth * 0.1,
+        grassY: window.innerHeight - 168,
+        groundY: window.innerHeight - 120,
+    }
+];
+
+const floatingItem = document.createElement('div');
+floatingItem.className = 'floating-item';
+floatingItem.style.backgroundImage = `url('/a/2d590c64-fbda-485e-883c-6bc8d200e09f')`;
+floatingItem.style.left = `${window.innerWidth * 0.75}px`;
+floatingItem.style.top = `${window.innerHeight - 450}px`;
+
+const groundElement = document.querySelector('.game-container .ground');
+const grassElement = document.querySelector('.game-container .grass');
+
+const leftGround = document.createElement('div');
+leftGround.className = 'ground';
+leftGround.style.width = `${platforms[0].width}px`;
+leftGround.style.left = `${platforms[0].x}px`;
+
+const leftGrass = document.createElement('div');
+leftGrass.className = 'grass';
+leftGrass.style.width = `${platforms[0].width}px`;
+leftGrass.style.left = `${platforms[0].x}px`;
+
+const rightGround = document.createElement('div');
+rightGround.className = 'ground';
+rightGround.style.width = `${platforms[1].width}px`;
+rightGround.style.left = `${platforms[1].x}px`;
+
+const rightGrass = document.createElement('div');
+rightGrass.className = 'grass';
+rightGrass.style.width = `${platforms[1].width}px`;
+rightGrass.style.left = `${platforms[1].x}px`;
+
+groundElement.remove();
+grassElement.remove();
+
+const gameContainer = document.getElementById('gameContainer');
+gameContainer.appendChild(leftGround);
+gameContainer.appendChild(leftGrass);
+gameContainer.appendChild(rightGround);
+gameContainer.appendChild(rightGrass);
+gameContainer.appendChild(floatingItem);
+
+let playerElement = document.getElementById('player');
+
+const keys = {
+    a: false,
+    d: false,
+    w: false
+};
+
+document.addEventListener('keydown', (e) => {
+    if (e.key.toLowerCase() in keys) {
+        keys[e.key.toLowerCase()] = true;
+    }
+});
+
+document.addEventListener('mousedown', (e) => {
+    if (e.button === 0) { 
+        swingAxe();
+    }
+});
+
+document.addEventListener('keyup', (e) => {
+    if (e.key.toLowerCase() in keys) {
+        keys[e.key.toLowerCase()] = false;
+    }
+});
+
+function updateSpeechBubblePosition(bubble, x, y) {
+    if (bubble) {
+        bubble.style.left = `${x - 108}px`;
+        bubble.style.top = `${y - 150}px`;
+    }
+}
+
+function checkPlatformCollision(playerRect) {
+    for (const platform of platforms) {
+        if (playerRect.x + playerRect.width > platform.x && 
+            playerRect.x < platform.x + platform.width) {
+            
+            if (playerRect.y + playerRect.height > platform.grassY &&
+                playerRect.y < platform.grassY + 48) {
+                return { collision: true, y: platform.grassY };
+            }
+            
+            if (playerRect.y + playerRect.height > platform.groundY &&
+                playerRect.y < platform.groundY + 120) {
+                return { collision: true, y: platform.groundY };
+            }
+        }
+    }
+    return { collision: false };
+}
+
+function checkFallIntoGap(playerRect) {
+    if (playerRect.y > window.innerHeight && !player.inCave) {
+        enterCaveArea();
+    }
+}
+
+function enterCaveArea() {
+    player.inCave = true;
+    document.getElementById('gameContainer').style.display = 'none';
+    document.getElementById('caveArea').style.display = 'block';
+    
+    cat.health = 355;
+    cat.x = window.innerWidth / 2;
+    cat.y = window.innerHeight / 2;
+    cat.angle = 0;
+    cat.inPhase2 = false;
+    cat.inPhase3 = false;
+    cat.isAttacking = false;
+    cat.isDying = false;
+    cat.attackCooldown = 180;
+    cat.knifeAttackCooldown = 180;
+    cat.laserAttackCooldown = 240;
+
+    const healthBar = document.getElementById('catHealthBar');
+    healthBar.style.width = '100%';
+
+    gameMusic.pause();
+    gameMusic.currentTime = 0;
+    caveMusic.play().catch(e => console.log('Audio playback failed:', e));
+    
+    player.x = window.innerWidth / 2;
+    player.y = window.innerHeight / 2;
+
+    const speechBubble = document.createElement('div');
+    speechBubble.className = 'speech-bubble';
+    speechBubble.style.backgroundImage = "url('https://file.garden/ZuVWBvHqjV5ssvlO/catspeech.png')";
+    document.getElementById('caveArea').appendChild(speechBubble);
+
+    updateSpeechBubblePosition(speechBubble, cat.x, cat.y);
+
+    setTimeout(() => {
+        speechBubble.style.opacity = '1';
+    }, 100);
+
+    const updateBubble = () => {
+        updateSpeechBubblePosition(speechBubble, cat.x, cat.y);
+        if (speechBubble.style.opacity !== '0') {
+            requestAnimationFrame(updateBubble);
+        }
+    };
+    updateBubble();
+
+    setTimeout(() => {
+        speechBubble.style.opacity = '0';
+        setTimeout(() => speechBubble.remove(), 300);
+    }, 1000);
+
+    playerElement = document.getElementById('cavePlayer');
+}
+
+function checkCaveCollisions(playerRect) {
+    const floor = window.innerHeight - 120;
+    const leftWall = 200; 
+    const rightWall = window.innerWidth - 200; 
+
+    let collision = { collision: false };
+
+    if (playerRect.y + playerRect.height > floor) {
+        collision = { collision: true, y: floor };
+    }
+    
+    if (playerRect.x < leftWall) {
+        player.x = leftWall;
+    }
+    
+    if (playerRect.x + playerRect.width > rightWall) {
+        player.x = rightWall - playerRect.width;
+    }
+
+    return collision;
+}
+
+const cat = {
+    x: window.innerWidth / 2,
+    y: window.innerHeight / 2,
+    angle: 0,
+    speed: 2,
+    phase2Speed: 4,
+    inPhase2: false,
+    inPhase3: false,
+    health: 355,
+    isAttacking: false,
+    attackingSpeed: 0.5,
+    knifeAttackCooldown: 180,
+    isThrowingKnives: false,
+    phase3Speed: 6,
+    phase3AttackCooldown: 90,
+    attackCooldown: 180,
+    laserAttackCooldown: 240,
+    isShootingLasers: false,
+    isDying: false,
+    isSecondPhase: false,
+    secondPhaseHealth: 500,
+    isUltraPhase: false
+};
+
+function updateCatEnemy() {
+    if (!player.inCave || cat.isDying) {
+        if (Math.random() < 0.001) {
+            spawnHeartPowerUp();
+        }
+        return;
+    }
+
+    let spawnChance = 0.0005; // Base chance
+    if (cat.inPhase2) spawnChance = 0.001;
+    if (cat.inPhase3) spawnChance = 0.0015;
+    if (cat.isSecondPhase) spawnChance = 0.002;
+    if (cat.isUltraPhase) {
+        spawnChance = 0.003; // Higher chance for health powerups
+        
+        if (!cat.isAttacking && !cat.isThrowingKnives && !cat.isShootingLasers) {
+            if (Math.random() < 0.03) {
+                initiateUltraAttack();
+            }
+        }
+    }
+
+    if (Math.random() < spawnChance) {
+        spawnHeartPowerUp();
+    }
+
+    const centerX = window.innerWidth / 2;
+    const centerY = window.innerHeight / 2;
+    const width = 200;
+    const height = 100;
+    
+    if (!cat.isAttacking && !cat.isThrowingKnives && !cat.isShootingLasers) {
+        let currentSpeed = cat.speed;
+        if (cat.inPhase3) {
+            currentSpeed = cat.phase3Speed;
+        } else if (cat.isSecondPhase) {
+            currentSpeed = cat.phase2Speed;
+        } else if (cat.inPhase2) {
+            currentSpeed = cat.phase2Speed;
+        }
+        cat.angle += currentSpeed * 0.01;
+        
+        const t = cat.angle;
+        const a = width;
+        const denominator = 1 + Math.pow(Math.sin(t), 2);
+        
+        cat.x = centerX + a * Math.cos(t) / denominator;
+        cat.y = centerY + a * Math.sin(t) * Math.cos(t) / denominator;
+    }
+    
+    const catElement = document.getElementById('catEnemy');
+    catElement.style.left = `${cat.x - 64}px`;
+    catElement.style.top = `${cat.y - 64}px`;
+    
+    if (Math.cos(cat.angle) < 0) {
+        catElement.style.transform = 'scaleX(-1)';
+    } else {
+        catElement.style.transform = 'scaleX(1)';
+    }
+
+    if (cat.attackCooldown > 0) {
+        cat.attackCooldown--;
+    }
+    
+    if (cat.knifeAttackCooldown > 0) {
+        cat.knifeAttackCooldown--;
+    }
+    
+    if (!cat.isAttacking && !cat.isThrowingKnives && !cat.isShootingLasers) {
+        if (cat.laserAttackCooldown <= 0 && Math.random() < 0.02) {
+            initiateLaserAttack();
+        } else if (cat.knifeAttackCooldown <= 0 && Math.random() < 0.02) {
+            initiateKnifeAttack();
+        } else if (cat.attackCooldown <= 0 && Math.random() < (cat.isSecondPhase ? 0.04 : (cat.inPhase2 ? 0.04 : 0.02))) {
+            if (cat.isSecondPhase && Math.random() < 0.5) {
+                initiateBulletAttack();
+            } else {
+                initiateCatAttack();
+            }
+        }
+    }
+}
+
+function initiateUltraAttack() {
+    if (player.dead || cat.isDying) return;
+    
+    const attackType = Math.floor(Math.random() * 4);
+    
+    switch(attackType) {
+        case 0:
+            ultraBulletSpiral();
+            break;
+        case 1:
+            ultraBulletRain();
+            break;
+        case 2:
+            ultraCrossAttack();
+            break;
+        case 3:
+            ultraLaserGrid();
+            break;
+    }
+}
+
+function ultraBulletRain() {
+    if (player.dead || cat.isDying) return;
+    
+    const bulletCount = 20;
+    const waves = 3;
+    let currentWave = 0;
+    
+    function spawnWave() {
+        for (let i = 0; i < bulletCount; i++) {
+            const bullet = document.createElement('div');
+            bullet.className = 'ultra-bullet';
+            bullet.style.left = `${Math.random() * (window.innerWidth - 48)}px`;
+            bullet.style.top = '-48px';
+            document.getElementById('caveArea').appendChild(bullet);
+            
+            let velocityY = 5;
+            let velocityX = (Math.random() - 0.5) * 4;
+            
+            function animateBullet() {
+                const currentTop = parseFloat(bullet.style.top);
+                const currentLeft = parseFloat(bullet.style.left);
+                
+                bullet.style.top = `${currentTop + velocityY}px`;
+                bullet.style.left = `${currentLeft + velocityX}px`;
+                bullet.style.transform = `rotate(${currentTop * 2}deg)`;
+                
+                const bulletRect = bullet.getBoundingClientRect();
+                const playerRect = document.getElementById('cavePlayer').getBoundingClientRect();
+                
+                if (bulletRect.right > playerRect.left && 
+                    bulletRect.left < playerRect.right &&
+                    bulletRect.bottom > playerRect.top && 
+                    bulletRect.top < playerRect.bottom) {
+                    damagePlayer();
+                    bullet.remove();
+                    return;
+                }
+                
+                if (currentTop > window.innerHeight) {
+                    bullet.remove();
+                    return;
+                }
+                
+                requestAnimationFrame(animateBullet);
+            }
+            
+            animateBullet();
+        }
+        
+        currentWave++;
+        if (currentWave < waves) {
+            setTimeout(spawnWave, 1000);
+        }
+    }
+    
+    spawnWave();
+}
+
+function ultraCrossAttack() {
+    if (player.dead || cat.isDying) return;
+    
+    const lines = 4;
+    const bulletsPerLine = 15;
+    
+    for (let line = 0; line < lines; line++) {
+        const angle = (line * Math.PI) / 2;
+        
+        for (let i = 0; i < bulletsPerLine; i++) {
+            setTimeout(() => {
+                const bullet = document.createElement('div');
+                bullet.className = 'ultra-bullet';
+                bullet.style.left = `${cat.x - 24}px`;
+                bullet.style.top = `${cat.y - 24}px`;
+                document.getElementById('caveArea').appendChild(bullet);
+                
+                const speed = 6;
+                const dx = Math.cos(angle) * speed;
+                const dy = Math.sin(angle) * speed;
+                let distance = 0;
+                
+                function moveBullet() {
+                    distance += speed;
+                    bullet.style.left = `${cat.x + dx * distance - 24}px`;
+                    bullet.style.top = `${cat.y + dy * distance - 24}px`;
+                    bullet.style.transform = `rotate(${distance * 2}deg)`;
+                    
+                    const bulletRect = bullet.getBoundingClientRect();
+                    const playerRect = document.getElementById('cavePlayer').getBoundingClientRect();
+                    
+                    if (bulletRect.right > playerRect.left && 
+                        bulletRect.left < playerRect.right &&
+                        bulletRect.bottom > playerRect.top && 
+                        bulletRect.top < playerRect.bottom) {
+                        damagePlayer();
+                        bullet.remove();
+                        return;
+                    }
+                    
+                    if (distance > 1000) {
+                        bullet.remove();
+                        return;
+                    }
+                    
+                    requestAnimationFrame(moveBullet);
+                }
+                
+                moveBullet();
+            }, i * 100);
+        }
+    }
+}
+
+function ultraLaserGrid() {
+    if (player.dead || cat.isDying) return;
+    
+    const laserCount = 8;
+    const duration = 3000;
+    
+    for (let i = 0; i < laserCount; i++) {
+        const isVertical = i % 2 === 0;
+        const laser = document.createElement('div');
+        laser.className = 'laser-beam';
+        
+        if (isVertical) {
+            laser.style.width = '4px';
+            laser.style.height = '100vh';
+            laser.style.left = `${(window.innerWidth / (laserCount/2)) * (i/2)}px`;
+            laser.style.top = '0';
+        } else {
+            laser.style.width = '100vw';
+            laser.style.height = '4px';
+            laser.style.left = '0';
+            laser.style.top = `${(window.innerHeight / (laserCount/2)) * Math.floor(i/2)}px`;
+        }
+        
+        document.getElementById('caveArea').appendChild(laser);
+        
+        function checkCollision() {
+            const laserRect = laser.getBoundingClientRect();
+            const playerRect = document.getElementById('cavePlayer').getBoundingClientRect();
+            
+            if (laserRect.right > playerRect.left && 
+                laserRect.left < playerRect.right &&
+                laserRect.bottom > playerRect.top && 
+                laserRect.top < playerRect.bottom) {
+                damagePlayer();
+            }
+            
+            if (!laser.isRemoved) {
+                requestAnimationFrame(checkCollision);
+            }
+        }
+        
+        checkCollision();
+        
+        setTimeout(() => {
+            laser.isRemoved = true;
+            laser.remove();
+        }, duration);
+    }
+}
+
+function ultraBulletSpiral() {
+    let angle = 0;
+    let bullets = 0;
+    const maxBullets = 60;
+    
+    function shootBullet() {
+        if (bullets >= maxBullets) return;
+        
+        const bullet = document.createElement('div');
+        bullet.className = 'ultra-bullet';
+        bullet.style.left = `${cat.x - 24}px`;
+        bullet.style.top = `${cat.y - 24}px`;
+        document.getElementById('caveArea').appendChild(bullet);
+        
+        const speed = 6;
+        const dx = Math.cos(angle) * speed;
+        const dy = Math.sin(angle) * speed;
+        let distance = 0;
+        
+        function moveBullet() {
+            distance += speed;
+            bullet.style.left = `${cat.x + dx * distance - 24}px`;
+            bullet.style.top = `${cat.y + dy * distance - 24}px`;
+            bullet.style.transform = `rotate(${distance * 2}deg)`;
+            
+            const bulletRect = bullet.getBoundingClientRect();
+            const playerRect = document.getElementById('cavePlayer').getBoundingClientRect();
+            
+            if (bulletRect.right > playerRect.left && 
+                bulletRect.left < playerRect.right &&
+                bulletRect.bottom > playerRect.top && 
+                bulletRect.top < playerRect.bottom) {
+                damagePlayer();
+                bullet.remove();
+                return;
+            }
+            
+            if (distance > 1000) {
+                bullet.remove();
+                return;
+            }
+            
+            requestAnimationFrame(moveBullet);
+        }
+        
+        moveBullet();
+        angle += 0.3;
+        bullets++;
+        
+        if (bullets < maxBullets) {
+            setTimeout(shootBullet, 50);
+        }
+    }
+    
+    shootBullet();
+}
+
+function handleCatDeath() {
+    if (cat.isDying) return;
+    
+    if (!cat.isSecondPhase) {
+        startSecondPhase();
+        return;
+    }
+
+    if (!cat.isUltraPhase) {
+        startUltraPhase();
+        return;
+    }
+    
+    // Rest of original death handling code...
+}
+
+function startSecondPhase() {
+    cat.isDying = false;
+    cat.isSecondPhase = true;
+    cat.health = cat.secondPhaseHealth;
+    
+    cat.inPhase2 = false;
+    cat.inPhase3 = false;
+    cat.attackCooldown = 180;
+    cat.knifeAttackCooldown = 180;
+    cat.laserAttackCooldown = 240;
+    
+    const healthBar = document.getElementById('catHealthBar');
+    healthBar.style.width = '100%';
+    
+    const healthLabel = document.querySelector('.cat-health-label');
+    healthLabel.textContent = "TRUE GLUNGI HEALTH";
+    
+    const catElement = document.getElementById('catEnemy');
+    catElement.style.filter = 'hue-rotate(180deg) brightness(1.5)';
+    
+    caveMusic.playbackRate = 1.5;
+    caveMusic.play();
+}
+
+function startUltraPhase() {
+    cat.isDying = false;
+    cat.isUltraPhase = true;
+    cat.health = 1500;
+    cat.maxHealth = 1500;
+    cat.inPhase2 = false;
+    cat.inPhase3 = false;
+    
+    const catElement = document.getElementById('catEnemy');
+    catElement.classList.add('ultra-glungi');
+    
+    const blueFlame = document.createElement('div');
+    blueFlame.className = 'blue-flame';
+    catElement.appendChild(blueFlame);
+    
+    const healthLabel = document.querySelector('.cat-health-label');
+    healthLabel.textContent = "ULTRA GLUNGI";
+    
+    caveMusic.playbackRate = 2.2;
+    
+    // Reset health bar
+    const healthBar = document.getElementById('catHealthBar');
+    healthBar.style.width = '100%';
+}
+
+function initiateLaserAttack() {
+    if (player.dead || cat.isDying || cat.isShootingLasers) return;
+    
+    cat.isShootingLasers = true;
+    cat.laserAttackCooldown = 240;
+    
+    const sides = ['left', 'right'];
+    sides.forEach(side => {
+        const laserSource = document.createElement('div');
+        laserSource.className = 'laser-source';
+        laserSource.style.position = 'absolute';
+        laserSource.style[side] = '0';
+        laserSource.style.top = '50%';
+        laserSource.style.transform = 'translateY(-50%)';
+        
+        document.getElementById('caveArea').appendChild(laserSource);
+        
+        const laser = document.createElement('div');
+        laser.className = 'laser-beam';
+        laser.style.position = 'absolute';
+        laser.style.height = '4px';
+        laser.style.background = 'red';
+        laser.style.top = '50%';
+        laser.style[side] = '32px';
+        laser.style.transform = 'translateY(-50%)';
+        
+        document.getElementById('caveArea').appendChild(laser);
+        
+        let width = 0;
+        const maxWidth = window.innerWidth / 2;
+        const growSpeed = 15;
+        
+        function animateLaser() {
+            if (width < maxWidth) {
+                width += growSpeed;
+                laser.style.width = `${width}px`;
+                
+                const laserRect = laser.getBoundingClientRect();
+                const playerRect = document.getElementById('cavePlayer').getBoundingClientRect();
+                
+                if (laserRect.right > playerRect.left && 
+                    laserRect.left < playerRect.right &&
+                    laserRect.bottom > playerRect.top && 
+                    laserRect.top < playerRect.bottom) {
+                    damagePlayer();
+                }
+                
+                requestAnimationFrame(animateLaser);
+            } else {
+                setTimeout(() => {
+                    laser.remove();
+                    laserSource.remove();
+                }, 500);
+            }
+        }
+        
+        animateLaser();
+    });
+    
+    setTimeout(() => {
+        cat.isShootingLasers = false;
+    }, 2000);
+}
+
+function initiateKnifeAttack() {
+    if (player.dead || cat.isThrowingKnives || cat.isDying) return;
+    
+    cat.isThrowingKnives = true;
+    cat.knifeAttackCooldown = 180;
+
+    const knifeCount = cat.inPhase3 ? 12 : 8; 
+    for (let i = 0; i < knifeCount; i++) {
+        const knife = document.createElement('div');
+        knife.className = 'knife';
+        knife.style.left = `${cat.x - 16}px`;
+        knife.style.top = `${cat.y - 16}px`;
+        
+        const angle = (i * (360/knifeCount)) * (Math.PI / 180); 
+        
+        knife.style.transform = `rotate(${angle * 180 / Math.PI}deg)`;
+        
+        document.getElementById('caveArea').appendChild(knife);
+        
+        let distance = 0;
+        const speed = cat.inPhase3 ? 6 : 4; 
+        const dx = Math.cos(angle) * speed;
+        const dy = Math.sin(angle) * speed;
+        
+        function animateKnife() {
+            distance += speed;
+            
+            const newX = cat.x + dx * distance;
+            const newY = cat.y + dy * distance;
+            
+            knife.style.left = `${newX - 16}px`;
+            knife.style.top = `${newY - 16}px`;
+            
+            const knifeRect = knife.getBoundingClientRect();
+            const playerRect = document.getElementById('cavePlayer').getBoundingClientRect();
+            
+            if (knifeRect.right > playerRect.left && 
+                knifeRect.left < playerRect.right &&
+                knifeRect.bottom > playerRect.top && 
+                knifeRect.top < playerRect.bottom) {
+                damagePlayer();
+                damagePlayer(); 
+                knife.remove();
+                return;
+            }
+            
+            if (distance > 100) {
+                knife.remove();
+                return;
+            }
+            
+            requestAnimationFrame(animateKnife);
+        }
+        
+        animateKnife();
+    }
+    
+    setTimeout(() => {
+        cat.isThrowingKnives = false;
+    }, 1000);
+}
+
+function initiateBulletAttack() {
+    if (player.dead || cat.isDying || !cat.isSecondPhase) return;
+    
+    cat.isAttacking = true;
+    
+    const bulletCount = cat.inPhase3 ? 16 : 8;
+    const waves = cat.inPhase3 ? 3 : 2;
+    let currentWave = 0;
+    
+    function shootWave() {
+        for (let i = 0; i < bulletCount; i++) {
+            const bullet = document.createElement('div');
+            bullet.className = 'glungi-bullet';
+            bullet.style.left = `${cat.x - 16}px`;
+            bullet.style.top = `${cat.y - 16}px`;
+            
+            const angle = (i * (360/bulletCount)) * (Math.PI / 180);
+            const speed = cat.inPhase3 ? 5 : 3;
+            
+            document.getElementById('caveArea').appendChild(bullet);
+            
+            let distance = 0;
+            const dx = Math.cos(angle) * speed;
+            const dy = Math.sin(angle) * speed;
+            
+            function animateBullet() {
+                distance += speed;
+                
+                const newX = cat.x + dx * distance;
+                const newY = cat.y + dy * distance;
+                
+                bullet.style.left = `${newX - 16}px`;
+                bullet.style.top = `${newY - 16}px`;
+                bullet.style.transform = `rotate(${distance * 2}deg)`;
+                
+                const bulletRect = bullet.getBoundingClientRect();
+                const playerRect = document.getElementById('cavePlayer').getBoundingClientRect();
+                
+                if (bulletRect.right > playerRect.left && 
+                    bulletRect.left < playerRect.right &&
+                    bulletRect.bottom > playerRect.top && 
+                    bulletRect.top < playerRect.bottom) {
+                    damagePlayer();
+                    bullet.remove();
+                    return;
+                }
+                
+                if (distance > 500 || bullet.offsetLeft < 0 || 
+                    bullet.offsetLeft > window.innerWidth || 
+                    bullet.offsetTop < 0 || 
+                    bullet.offsetTop > window.innerHeight) {
+                    bullet.remove();
+                    return;
+                }
+                
+                requestAnimationFrame(animateBullet);
+            }
+            
+            animateBullet();
+        }
+        
+        currentWave++;
+        if (currentWave < waves) {
+            setTimeout(shootWave, 500);
+        } else {
+            setTimeout(() => {
+                cat.isAttacking = false;
+            }, 1000);
+        }
+    }
+    
+    shootWave();
+}
+
+function initiateCatAttack() {
+    if (player.dead || cat.isDying) return;  
+    
+    cat.isAttacking = true;
+    cat.attackCooldown = cat.inPhase3 ? cat.phase3AttackCooldown : 120; 
+
+    const createAttack = (randomAngle = false) => {
+        const attackElement = document.createElement('div');
+        attackElement.className = 'cat-attack';
+        attackElement.style.left = `${cat.x - 64}px`;
+        attackElement.style.top = `${cat.y - 64}px`;
+        
+        const catElement = document.getElementById('catEnemy');
+        document.getElementById('caveArea').insertBefore(attackElement, catElement);
+
+        let angle;
+        if (randomAngle) {
+            angle = Math.random() * 360; 
+        } else {
+            const dx = player.x - cat.x;
+            const dy = player.y - cat.y;
+            angle = Math.atan2(dy, dx) * 180 / Math.PI;
+        }
+        
+        attackElement.style.transform = `rotate(${angle}deg)`;
+
+        let scale = 1;
+        
+        function animateAttack() {
+            if (scale < 6) {
+                scale += 0.1;
+                
+                attackElement.style.transform = `rotate(${angle}deg) scaleX(${scale})`;
+
+                const playerRect = document.getElementById(player.inCave ? 'cavePlayer' : 'player').getBoundingClientRect();
+                const attackRect = attackElement.getBoundingClientRect();
+                const hitboxWidth = attackRect.width * 0.2;
+                const hitboxLeft = attackRect.left + (attackRect.width - hitboxWidth) / 2;
+                const hitboxRight = hitboxLeft + hitboxWidth;
+                
+                if (playerRect.right > hitboxLeft && 
+                    playerRect.left < hitboxRight &&
+                    playerRect.bottom > attackRect.top && 
+                    playerRect.top < attackRect.bottom) {
+                    damagePlayer();
+                }
+
+                requestAnimationFrame(animateAttack);
+            } else {
+                attackElement.remove();
+                cat.isAttacking = false;
+            }
+        }
+
+        requestAnimationFrame(animateAttack);
+    }
+
+    createAttack();
+    
+    if (cat.inPhase2) {
+        createAttack(true);
+    }
+    
+    if (cat.inPhase3) {
+        setTimeout(() => createAttack(true), 200);
+    }
+}
+
+function handleCatDeath() {
+    if (cat.isDying) return;
+    
+    if (!cat.isSecondPhase) {
+        startSecondPhase();
+        return;
+    }
+
+    if (!cat.isUltraPhase) {
+        startUltraPhase();
+    }
+}
+
+function updateCatHealth(amount) {
+    const maxHealth = cat.isSecondPhase ? cat.secondPhaseHealth : 355;
+    cat.health = Math.max(0, Math.min(maxHealth, cat.health + amount));
+    const healthBar = document.getElementById('catHealthBar');
+    const catElement = document.getElementById('catEnemy');
+    const healthContainer = document.querySelector('.cat-health-container');
+    const healthLabel = document.querySelector('.cat-health-label');
+    
+    if (!cat.isSecondPhase) {
+        if (cat.health <= 177 && !cat.inPhase2) {
+            cat.inPhase2 = true;
+            healthLabel.textContent = "GLUNGI: PHASE 2 HEALTH";
+            catElement.style.animation = 'shakeFlipped 0.5s infinite';
+            caveMusic.playbackRate = 1.2;
+        }
+        
+        if (cat.health <= 89 && !cat.inPhase3) {
+            cat.inPhase3 = true;
+            healthLabel.textContent = "GLUNGI: PHASE 3 HEALTH";
+            catElement.style.backgroundImage = "url('/a/90a4f1b9-5586-41b0-9f7a-80e498fb3e5f')";
+            catElement.style.animation = 'shakeFlipped 0.3s infinite';
+            caveMusic.playbackRate = 1.4;
+        }
+    } else {
+        if (cat.health <= cat.secondPhaseHealth * 0.6 && !cat.inPhase2) {
+            cat.inPhase2 = true;
+            healthLabel.textContent = "TRUE GLUNGI: PHASE 2";
+            catElement.style.animation = 'shakeFlipped 0.4s infinite';
+            caveMusic.playbackRate = 1.6;
+        }
+        
+        if (cat.health <= cat.secondPhaseHealth * 0.3 && !cat.inPhase3) {
+            cat.inPhase3 = true;
+            healthLabel.textContent = "TRUE GLUNGI: FINAL PHASE";
+            catElement.style.animation = 'shakeFlipped 0.2s infinite';
+            caveMusic.playbackRate = 1.8;
+        }
+    }
+    
+    healthBar.style.width = `${(cat.health / maxHealth) * 100}%`;
+    
+    if (amount < 0) {
+        healthContainer.classList.add('shaking');
+        setTimeout(() => {
+            healthContainer.classList.remove('shaking');
+        }, 500);
+    }
+    
+    if (cat.health <= 0) {
+        handleCatDeath();
+    }
+}
+
+function swingAxe() {
+    if (player.swingingAxe || player.axeCooldown > 0 || player.dead) return;
+    
+    player.swingingAxe = true;
+    player.axeCooldown = 30;
+    
+    const axe = document.createElement('div');
+    axe.className = 'axe';
+    
+    if (!player.facingRight) {
+        axe.style.transform = 'scaleX(-1)';
+    }
+    
+    const container = player.inCave ? document.getElementById('caveArea') : document.getElementById('gameContainer');
+    container.appendChild(axe);
+    
+    let swingTime = 0;
+    const swingDuration = 300;
+    let damageDealt = false;
+    
+    function updateAxePosition() {
+        if (swingTime >= swingDuration) {
+            axe.remove();
+            player.swingingAxe = false;
+            return;
+        }
+        
+        if (!player.facingRight) {
+            axe.style.transform = 'scaleX(-1)';
+            axe.style.left = `${player.x - 48}px`;
+        } else {
+            axe.style.transform = 'scaleX(1)';
+            axe.style.left = `${player.x + player.width}px`;
+        }
+        axe.style.top = `${player.y + 20}px`;
+        
+        axe.style.animation = player.facingRight ? 
+            'swingAxe 0.3s ease-out' : 
+            'swingAxeReverse 0.3s ease-out';
+        
+        if (player.inCave && !damageDealt && swingTime > swingDuration/2) {
+            const axeRect = axe.getBoundingClientRect();
+            const catRect = document.getElementById('catEnemy').getBoundingClientRect();
+            
+            if (axeRect.right > catRect.left && 
+                axeRect.left < catRect.right &&
+                axeRect.bottom > catRect.top && 
+                axeRect.top < catRect.bottom) {
+                updateCatHealth(-10);
+                damageDealt = true;
+            }
+        }
+        
+        swingTime += 16;
+        requestAnimationFrame(updateAxePosition);
+    }
+    
+    updateAxePosition();
+}
+
+function updatePlayer() {
+    if (player.dead) return;  
+
+    if (player.axeCooldown > 0) {
+        player.axeCooldown--;
+    }
+
+    if (player.health < 20) {
+        player.regenTimer++;
+        const currentRegenInterval = (cat.inPhase2) ? player.phase2RegenInterval : player.regenInterval;
+        if (player.regenTimer >= currentRegenInterval) {
+            player.regenTimer = 0;
+            updateHealth(1);
+        }
+    } else {
+        player.regenTimer = 0;
+    }
+
+    if (keys.a) {
+        player.x -= player.speed;
+        player.facingRight = false;
+        if (!player.jumping) {
+            playerElement.style.transform = 'scaleX(-1)';
+            playerElement.classList.remove('spinning-right', 'spinning-left');
+        }
+    }
+    if (keys.d) {
+        player.x += player.speed;
+        player.facingRight = true;
+        if (!player.jumping) {
+            playerElement.style.transform = 'scaleX(1)';
+            playerElement.classList.remove('spinning-right', 'spinning-left');
+        }
+    }
+
+    if (keys.w && !player.jumping) {
+        player.velocityY = jumpForce;
+        player.jumping = true;
+        
+        if (player.facingRight) {
+            playerElement.classList.add('spinning-right');
+            playerElement.classList.remove('spinning-left');
+        } else {
+            playerElement.classList.add('spinning-left');
+            playerElement.classList.remove('spinning-right');
+        }
+    }
+
+    player.velocityY += gravity;
+    player.y += player.velocityY;
+
+    const playerRect = {
+        x: player.x,
+        y: player.y,
+        width: player.width,
+        height: player.height
+    };
+
+    if (!player.inCave) {
+        const collision = checkPlatformCollision(playerRect);
+        if (collision.collision && player.velocityY > 0) {
+            player.y = collision.y - player.height;
+            player.velocityY = 0;
+            player.jumping = false;
+            playerElement.classList.remove('spinning-right', 'spinning-left');
+            playerElement.style.transform = player.facingRight ? 'scaleX(1)' : 'scaleX(-1)';
+        }
+        checkFallIntoGap(playerRect);
+    } else {
+        const caveCollision = checkCaveCollisions(playerRect);
+        if (caveCollision.collision && player.velocityY > 0) {
+            player.y = caveCollision.y - player.height;
+            player.velocityY = 0;
+            player.jumping = false;
+            playerElement.classList.remove('spinning-right', 'spinning-left');
+            playerElement.style.transform = player.facingRight ? 'scaleX(1)' : 'scaleX(-1)';
+        }
+    }
+
+    if (!player.invulnerable) {
+        playerElement.style.opacity = '1';
+    } else {
+        playerElement.style.opacity = player.invulnerable ? (Math.floor(Date.now() / 100) % 2 ? '0.5' : '1') : '1';
+    }
+
+    playerElement.style.left = `${player.x}px`;
+    playerElement.style.top = `${player.y}px`;
+}
+
+function gameLoop() {
+    if (!player.dead) {
+        updatePlayer();
+        if (player.inCave) {
+            updateCatEnemy();
+        }
+        updatePowerUps();
+    }
+    requestAnimationFrame(gameLoop);
+}
+
+function initGame() {
+    player.x = 300;
+    player.y = 300;
+    gameLoop();
+}
+</script></body></html>
